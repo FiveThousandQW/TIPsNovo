@@ -1,0 +1,54 @@
+run_name: instanovo_test_run_01
+epochs: 20
+report_to: tensorboard
+save_model: true
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save
+ckpt_interval: 1000
+train_from_scratch: true
+seed: 101
+train_path: /data/48/wuqian/fast/TipsNovo/data/tmp/test_128000dup.mgf
+lazy_loading: true
+train_batch_size: 32
+predict_batch_size: 32
+n_peaks: 200
+max_length: 40
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+max_charge: 10
+use_flash_attention: false
+conv_peak_encoder: false
+learning_rate: 0.001
+warmup_iters: 480
+weight_decay: 1.0e-05
+grad_accumulation: 1
+fp16: true
+device: auto
+residues:
+  A: 71.03711
+  R: 156.10111
+  'N': 114.04293
+  D: 115.02694
+  C: 103.00919
+  C[Carbamidomethyl]: 160.03065
+  E: 129.04259
+  Q: 128.05858
+  G: 57.02146
+  H: 137.05891
+  I: 113.08406
+  L: 113.08406
+  K: 128.09496
+  M: 131.04049
+  M[Oxidation]: 147.0354
+  F: 147.06841
+  P: 97.05276
+  S: 87.03203
+  T: 101.04768
+  W: 186.07931
+  'Y': 163.06333
+  V: 99.06841
+tb_summarywriter: /data/48/wuqian/fast/TipsNovo/log
+console_logging_steps: 50
+tensorboard_logging_steps: 500

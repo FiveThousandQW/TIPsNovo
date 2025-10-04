@@ -1,0 +1,108 @@
+[2025-09-15 15:01:37,364][__main__][INFO] - Initializing training.
+[2025-09-15 15:01:37,364][__main__][INFO] - Python version: 3.10.15 | packaged by conda-forge | (main, Oct 16 2024, 01:24:24) [GCC 13.3.0]
+[2025-09-15 15:01:37,364][__main__][INFO] - Torch version: 2.4.1+cu121
+[2025-09-15 15:01:37,364][__main__][INFO] - CUDA version: 12.1
+[2025-09-15 15:01:37,368][__main__][INFO] - Imported hydra config:
+use_readyData: false
+save_readyData: true
+train_readyData: /data/48/wuqian/fast/TipsNovo/data/readyData/systemMHC_train112W_anno.pt
+test_readyData: /data/48/wuqian/fast/TipsNovo/data/readyData/systemMHC_valid7w.parquet
+train_path: /data/48/wuqian/fast/TipsNovo/data/systemMHC_train112W_anno.parquet
+valid_path: /data/48/wuqian/fast/TipsNovo/data/systemMHC_valid7w.parquet
+profiler: false
+epochs: 30
+num_sanity_val_steps: 10
+console_logging_steps: 50
+tensorboard_logging_steps: 500
+report_to: null
+run_name: SystemMHC_TrainValid_split_noLazy
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+use_flash_attention: false
+conv_peak_encoder: false
+n_peaks: 200
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 10
+precursor_mass_tol: 50
+isotope_error_range:
+- 0
+- 1
+predict_batch_size: 128
+max_length: 40
+tb_summarywriter: /data/48/wuqian/fast/TipsNovo/log
+warmup_iters: 480
+max_iters: 3000000
+learning_rate: 0.0001
+train_batch_size: 160
+grad_accumulation: 1
+weight_decay: 1.0e-05
+gradient_clip_val: 10.0
+n_beams: 5
+compile_model: true
+device: auto
+n_gpu: 1
+fp16: true
+train_subset: 1
+valid_subset: 1
+val_check_interval: 1.0
+lazy_loading: false
+max_shard_size: 1000000
+preshuffle_shards: false
+perform_data_checks: true
+validate_precursor_mass: false
+verbose_loading: true
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save/
+save_model: true
+save_weights_only: false
+ckpt_interval: 6000
+train_from_scratch: true
+resume_checkpoint: null
+residues:
+  G: 57.021464
+  A: 71.037114
+  S: 87.032028
+  P: 97.052764
+  V: 99.068414
+  T: 101.04767
+  C: 103.009185
+  L: 113.084064
+  I: 113.084064
+  'N': 114.042927
+  D: 115.026943
+  Q: 128.058578
+  K: 128.094963
+  E: 129.042593
+  M: 131.040485
+  H: 137.058912
+  F: 147.068414
+  R: 156.101111
+  'Y': 163.063329
+  W: 186.079313
+  M[147]: 147.0354
+  P[113]: 113.047679
+  W[202]: 202.074228
+  E[111]: 111.032028
+  Q[111]: 111.032029
+
+[2025-09-15 15:01:37,372][__main__][INFO] - Starting transformer training
+[2025-09-15 15:01:37,372][__main__][INFO] - Vocab: {0: '[PAD]', 1: '[SOS]', 2: '[EOS]', 3: 'G', 4: 'A', 5: 'S', 6: 'P', 7: 'V', 8: 'T', 9: 'C', 10: 'L', 11: 'I', 12: 'N', 13: 'D', 14: 'Q', 15: 'K', 16: 'E', 17: 'M', 18: 'H', 19: 'F', 20: 'R', 21: 'Y', 22: 'W', 23: 'M[147]', 24: 'P[113]', 25: 'W[202]', 26: 'E[111]', 27: 'Q[111]'}
+[2025-09-15 15:01:37,372][__main__][INFO] - Loading data
+[2025-09-15 15:01:44,718][instanovo.utils.data_handler][INFO] - Verifying loaded data
+[2025-09-15 15:01:47,327][__main__][INFO] - Checking for unknown residues in 1,094,716 rows.
+[2025-09-15 15:01:47,516][__main__][WARNING] - Unsupported residues found in evaluation set! These rows will be dropped.
+[2025-09-15 15:01:47,516][__main__][INFO] - New residues found: 
+{'S[167]', 'S[-2]', 'S[-18]', 'T[-4]', '[43]', 'G[-48]', 'Y[243]', 'A[-18]'}
+[2025-09-15 15:01:47,516][__main__][INFO] - Residues supported: 
+{'W', 'M', 'K', 'D', 'I', 'A', 'G', 'R', 'Y', 'M[147]', 'L', 'P[113]', 'C', 'P', 'V', 'F', 'W[202]', 'Q', 'E', 'Q[111]', 'N', '[SOS]', 'S', '[EOS]', 'H', 'E[111]', 'T', '[PAD]'}
+[2025-09-15 15:02:07,052][__main__][WARNING] - 54 (0.01%) training rows dropped.
+[2025-09-15 15:02:07,052][__main__][WARNING] - 0 (0.00%) validation rows dropped.
+[2025-09-15 15:02:25,138][__main__][INFO] - Data loaded: 1,030,335 training samples; 64,327 validation samples
+[2025-09-15 15:02:25,192][__main__][INFO] - Checking if any validation set overlaps with training set...
+[2025-09-15 15:02:25,193][__main__][INFO] - No data leakage!
+[2025-09-15 15:02:25,194][__main__][INFO] - Sequencing the SpectrumDataset to list

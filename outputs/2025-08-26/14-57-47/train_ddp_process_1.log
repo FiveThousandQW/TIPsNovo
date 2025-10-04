@@ -1,0 +1,133 @@
+[2025-08-26 15:28:58,575][__main__][INFO] - Initializing training.
+[2025-08-26 15:28:58,575][__main__][INFO] - Python version: 3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]
+[2025-08-26 15:28:58,576][__main__][INFO] - Torch version: 2.4.1+cu121
+[2025-08-26 15:28:58,576][__main__][INFO] - CUDA version: 12.1
+[2025-08-26 15:28:58,580][__main__][INFO] - Imported hydra config:
+train_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461_trainValid_split/train.mgf
+valid_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461_trainValid_split/valid.mgf
+profiler: false
+epochs: 30
+num_sanity_val_steps: 10
+console_logging_steps: 50
+tensorboard_logging_steps: 500
+report_to: null
+run_name: 1461high_trainValid_splited
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+use_flash_attention: false
+conv_peak_encoder: false
+n_peaks: 200
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 10
+precursor_mass_tol: 50
+isotope_error_range:
+- 0
+- 1
+predict_batch_size: 128
+max_length: 40
+tb_summarywriter: /data/48/wuqian/fast/TipsNovo/log
+warmup_iters: 480
+max_iters: 3000000
+learning_rate: 0.0001
+train_batch_size: 192
+grad_accumulation: 1
+weight_decay: 1.0e-05
+gradient_clip_val: 10.0
+n_beams: 5
+compile_model: true
+device: auto
+n_gpu: 1
+fp16: true
+train_subset: 1
+valid_subset: 1
+val_check_interval: 1.0
+lazy_loading: true
+max_shard_size: 1000000
+preshuffle_shards: true
+perform_data_checks: true
+validate_precursor_mass: false
+verbose_loading: true
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save/
+save_model: true
+save_weights_only: false
+ckpt_interval: 2000
+train_from_scratch: true
+resume_checkpoint: null
+residues:
+  G: 57.021464
+  A: 71.037114
+  S: 87.032028
+  P: 97.052764
+  V: 99.068414
+  T: 101.04767
+  C: 103.009185
+  L: 113.084064
+  I: 113.084064
+  'N': 114.042927
+  D: 115.026943
+  Q: 128.058578
+  K: 128.094963
+  E: 129.042593
+  M: 131.040485
+  H: 137.058912
+  F: 147.068414
+  R: 156.101111
+  'Y': 163.063329
+  W: 186.079313
+  M[UNIMOD:35]: 147.0354
+  C[UNIMOD:4]: 160.030649
+  N[UNIMOD:7]: 115.026943
+  Q[UNIMOD:7]: 129.042594
+  S[UNIMOD:21]: 166.998028
+  T[UNIMOD:21]: 181.01367
+  Y[UNIMOD:21]: 243.029329
+  '[UNIMOD:1]': 42.010565
+  '[UNIMOD:5]': 43.005814
+  '[UNIMOD:385]': -17.026549
+
+[2025-08-26 15:28:58,585][__main__][INFO] - Starting transformer training
+[2025-08-26 15:28:58,585][__main__][INFO] - Vocab: {0: '[PAD]', 1: '[SOS]', 2: '[EOS]', 3: 'G', 4: 'A', 5: 'S', 6: 'P', 7: 'V', 8: 'T', 9: 'C', 10: 'L', 11: 'I', 12: 'N', 13: 'D', 14: 'Q', 15: 'K', 16: 'E', 17: 'M', 18: 'H', 19: 'F', 20: 'R', 21: 'Y', 22: 'W', 23: 'M[UNIMOD:35]', 24: 'C[UNIMOD:4]', 25: 'N[UNIMOD:7]', 26: 'Q[UNIMOD:7]', 27: 'S[UNIMOD:21]', 28: 'T[UNIMOD:21]', 29: 'Y[UNIMOD:21]', 30: '[UNIMOD:1]', 31: '[UNIMOD:5]', 32: '[UNIMOD:385]'}
+[2025-08-26 15:28:58,585][__main__][INFO] - Loading data
+[2025-08-26 15:28:58,585][instanovo.utils.data_handler][INFO] - Loading file 001 of 001: /data/48/wuqian/Proteometools/part1/anno_mgf/1461_trainValid_split/train.mgf
+[2025-08-26 15:55:00,827][instanovo.utils.data_handler][INFO] - Saving temporary file to /tmp/tmp2ts8384j/temp_692b25e58c3e43989f8aac91ac156146.parquet
+[2025-08-26 15:55:11,812][instanovo.utils.data_handler][INFO] - Saving temporary file to /tmp/tmp2ts8384j/temp_d6662891719342e480eb1ecd2472ae5b.parquet
+[2025-08-26 15:55:23,371][instanovo.utils.data_handler][INFO] - Verifying loaded data
+[2025-08-26 15:55:23,450][instanovo.utils.data_handler][INFO] - Pre-shuffling across 002 shards. This may take a while...
+[2025-08-26 15:55:23,451][instanovo.utils.data_handler][INFO] - Computing new mapping per original shard
+[2025-08-26 15:55:23,485][instanovo.utils.data_handler][INFO] - Extracting rows to create shuffled shards
+[2025-08-26 15:56:33,458][instanovo.utils.data_handler][INFO] - Writing shuffled shard 000/002 to /tmp/tmp2ts8384j/temp_c7a782dc0abf48c89b6de3010e9fb9e3.parquet [00:01:09/00:01:09, 69.973s/it]
+[2025-08-26 15:56:55,788][instanovo.utils.data_handler][INFO] - Writing shuffled shard 001/002 to /tmp/tmp2ts8384j/temp_8f102174a73849e9977f19512177569a.parquet [00:01:32/00:00:00, 46.151s/it]
+[2025-08-26 15:56:55,789][instanovo.utils.data_handler][INFO] - Removing unshuffled shards
+[2025-08-26 15:57:06,972][instanovo.utils.data_handler][INFO] - Pre-shuffle complete
+[2025-08-26 15:59:06,171][__main__][INFO] - Checking for unknown residues in 1,262,032 rows.
+[2025-08-26 15:59:08,833][__main__][WARNING] - Unsupported residues found in evaluation set! These rows will be dropped.
+[2025-08-26 15:59:08,833][__main__][INFO] - New residues found: 
+{'O'}
+[2025-08-26 15:59:08,833][__main__][INFO] - Residues supported: 
+{'[SOS]', 'I', 'Q[UNIMOD:7]', 'W', 'Y[UNIMOD:21]', '[UNIMOD:1]', 'M[UNIMOD:35]', '[PAD]', '[EOS]', 'K', 'G', 'H', 'S[UNIMOD:21]', '[UNIMOD:385]', '[UNIMOD:5]', 'E', 'F', 'D', 'T', 'P', 'R', 'V', 'C', 'T[UNIMOD:21]', 'N[UNIMOD:7]', 'L', 'Y', 'S', 'M', 'N', 'C[UNIMOD:4]', 'Q', 'A'}
+[2025-08-26 15:59:47,355][__main__][WARNING] - 1 (0.00%) training rows dropped.
+[2025-08-26 15:59:47,356][__main__][WARNING] - 0 (0.00%) validation rows dropped.
+[2025-08-26 16:00:29,284][__main__][INFO] - Data loaded: 1,182,693 training samples; 79,338 validation samples
+[2025-08-26 16:00:29,598][__main__][INFO] - Checking if any validation set overlaps with training set...
+[2025-08-26 16:00:29,631][__main__][INFO] - No data leakage!
+[2025-08-26 16:00:29,631][__main__][INFO] - Model checkpointing every 0.32 epochs.
+[2025-08-26 16:00:29,632][__main__][INFO] - Updates per epoch: 6,160, step_scale=0.16666666666666666
+[2025-08-26 16:00:46,928][__main__][INFO] - Sample batch:
+[2025-08-26 16:00:46,928][__main__][INFO] -  - spectra.shape=torch.Size([192, 200, 2])
+[2025-08-26 16:00:46,928][__main__][INFO] -  - precursors.shape=torch.Size([192, 3])
+[2025-08-26 16:00:46,928][__main__][INFO] -  - spectra_mask.shape=torch.Size([192, 200])
+[2025-08-26 16:00:46,928][__main__][INFO] -  - peptides.shape=torch.Size([192, 41])
+[2025-08-26 16:00:46,928][__main__][INFO] -  - peptides_mask.shape=torch.Size([192, 41])
+[2025-08-26 16:00:47,104][__main__][INFO] - Model loaded with 94,619,169 parameters
+[2025-08-26 16:00:47,104][__main__][INFO] - Test forward pass:
+[2025-08-26 16:00:52,223][__main__][INFO] -  - y.shape=torch.Size([192, 42, 33])
+[2025-08-26 16:00:52,992][__main__][INFO] - Model saving enabled
+[2025-08-26 16:00:52,993][__main__][INFO] - Saving every 2000 training steps to /data/48/wuqian/fast/TipsNovo/model_save/
+[2025-08-26 16:00:52,993][__main__][INFO] - Initializing Pytorch Lightning trainer.
+[2025-08-26 16:00:53,000][__main__][INFO] - InstaNovo training started.

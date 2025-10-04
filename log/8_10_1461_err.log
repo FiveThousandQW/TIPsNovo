@@ -1,0 +1,345 @@
+/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/pubchempy.py:563: SyntaxWarning: "is not" with a literal. Did you mean "!="?
+  if self.charge is not 0:
+[2025-08-09 22:31:36,075][__main__][INFO] - Initializing training.
+[2025-08-09 22:31:36,075][__main__][INFO] - Python version: 3.10.15 | packaged by conda-forge | (main, Oct 16 2024, 01:24:24) [GCC 13.3.0]
+[2025-08-09 22:31:36,075][__main__][INFO] - Torch version: 2.4.1+cu121
+[2025-08-09 22:31:36,075][__main__][INFO] - CUDA version: 12.1
+[2025-08-09 22:31:36,079][__main__][INFO] - Imported hydra config:
+train_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461raw_high.mgf
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+use_flash_attention: false
+conv_peak_encoder: false
+n_peaks: 200
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 10
+precursor_mass_tol: 50
+isotope_error_range:
+- 0
+- 1
+predict_batch_size: 128
+max_length: 40
+tb_summarywriter: /data/48/wuqian/fast/TipsNovo/log
+warmup_iters: 480
+max_iters: 3000000
+learning_rate: 0.0001
+train_batch_size: 128
+grad_accumulation: 1
+weight_decay: 1.0e-05
+gradient_clip_val: 10.0
+n_beams: 5
+compile_model: true
+device: auto
+n_gpu: 1
+fp16: true
+epochs: 30
+num_sanity_val_steps: 10
+console_logging_steps: 50
+tensorboard_logging_steps: 500
+report_to: null
+run_name: instanovo_300raw_high
+train_subset: 1.0
+valid_subset: 0.02
+val_check_interval: 1.0
+lazy_loading: true
+max_shard_size: 1000000
+preshuffle_shards: true
+perform_data_checks: true
+validate_precursor_mass: false
+verbose_loading: true
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save
+save_model: true
+save_weights_only: false
+ckpt_interval: 2000
+train_from_scratch: true
+residues:
+  G: 57.021464
+  A: 71.037114
+  S: 87.032028
+  P: 97.052764
+  V: 99.068414
+  T: 101.04767
+  C: 103.009185
+  L: 113.084064
+  I: 113.084064
+  'N': 114.042927
+  D: 115.026943
+  Q: 128.058578
+  K: 128.094963
+  E: 129.042593
+  M: 131.040485
+  H: 137.058912
+  F: 147.068414
+  R: 156.101111
+  'Y': 163.063329
+  W: 186.079313
+  M[UNIMOD:35]: 147.0354
+  C[UNIMOD:4]: 160.030649
+  N[UNIMOD:7]: 115.026943
+  Q[UNIMOD:7]: 129.042594
+  S[UNIMOD:21]: 166.998028
+  T[UNIMOD:21]: 181.01367
+  Y[UNIMOD:21]: 243.029329
+  '[UNIMOD:1]': 42.010565
+  '[UNIMOD:5]': 43.005814
+  '[UNIMOD:385]': -17.026549
+
+[2025-08-09 22:31:36,083][__main__][INFO] - Starting transformer training
+[2025-08-09 22:31:36,083][__main__][INFO] - Vocab: {0: '[PAD]', 1: '[SOS]', 2: '[EOS]', 3: 'G', 4: 'A', 5: 'S', 6: 'P', 7: 'V', 8: 'T', 9: 'C', 10: 'L', 11: 'I', 12: 'N', 13: 'D', 14: 'Q', 15: 'K', 16: 'E', 17: 'M', 18: 'H', 19: 'F', 20: 'R', 21: 'Y', 22: 'W', 23: 'M[UNIMOD:35]', 24: 'C[UNIMOD:4]', 25: 'N[UNIMOD:7]', 26: 'Q[UNIMOD:7]', 27: 'S[UNIMOD:21]', 28: 'T[UNIMOD:21]', 29: 'Y[UNIMOD:21]', 30: '[UNIMOD:1]', 31: '[UNIMOD:5]', 32: '[UNIMOD:385]'}
+[2025-08-09 22:31:36,083][__main__][INFO] - Loading data
+[2025-08-09 22:31:36,084][instanovo.utils.data_handler][INFO] - Loading file 001 of 001: /data/48/wuqian/Proteometools/part1/anno_mgf/1461raw_high.mgf
+[2025-08-09 22:59:04,358][instanovo.utils.data_handler][INFO] - Saving temporary file to /tmp/tmpxi4pv8g0/temp_4deaca04f6f14b53abfa0b8d0879ca15.parquet
+[2025-08-09 22:59:18,379][instanovo.utils.data_handler][INFO] - Saving temporary file to /tmp/tmpxi4pv8g0/temp_178f6897dfab4670b20ec9222917ab9e.parquet
+[2025-08-09 22:59:32,420][instanovo.utils.data_handler][INFO] - Verifying loaded data
+[2025-08-09 22:59:32,463][instanovo.utils.data_handler][INFO] - Pre-shuffling across 002 shards. This may take a while...
+[2025-08-09 22:59:32,463][instanovo.utils.data_handler][INFO] - Computing new mapping per original shard
+[2025-08-09 22:59:32,509][instanovo.utils.data_handler][INFO] - Extracting rows to create shuffled shards
+[2025-08-09 23:00:37,566][instanovo.utils.data_handler][INFO] - Writing shuffled shard 000/002 to /tmp/tmpxi4pv8g0/temp_8cc995a3e29c46319dbbcff8afd113da.parquet [00:01:05/00:01:05, 65.057s/it]
+[2025-08-09 23:01:06,587][instanovo.utils.data_handler][INFO] - Writing shuffled shard 001/002 to /tmp/tmpxi4pv8g0/temp_e299d22fd7dc45709bb78659a18f6c0d.parquet [00:01:34/00:00:00, 47.039s/it]
+[2025-08-09 23:01:06,587][instanovo.utils.data_handler][INFO] - Removing unshuffled shards
+[2025-08-09 23:01:22,159][instanovo.utils.data_handler][INFO] - Pre-shuffle complete
+[2025-08-09 23:29:18,531][__main__][INFO] - Validation path not specified, generating from training set.
+[2025-08-09 23:31:23,620][__main__][INFO] - Data splits saved to /data/48/wuqian/fast/TipsNovo/model_save/splits.csv
+[2025-08-09 23:31:23,620][__main__][INFO] - Checking for unknown residues in 1,262,032 rows.
+[2025-08-09 23:31:26,366][__main__][WARNING] - Unsupported residues found in evaluation set! These rows will be dropped.
+[2025-08-09 23:31:26,366][__main__][INFO] - New residues found: 
+{'O'}
+[2025-08-09 23:31:26,366][__main__][INFO] - Residues supported: 
+{'H', 'C[UNIMOD:4]', '[SOS]', 'F', 'L', '[UNIMOD:385]', 'C', 'Y[UNIMOD:21]', 'Y', 'S[UNIMOD:21]', '[EOS]', 'Q', 'I', 'M[UNIMOD:35]', 'D', 'M', '[UNIMOD:1]', 'T[UNIMOD:21]', 'T', 'P', 'R', 'K', '[PAD]', 'S', '[UNIMOD:5]', 'N', 'A', 'W', 'N[UNIMOD:7]', 'E', 'V', 'Q[UNIMOD:7]', 'G'}
+[2025-08-09 23:33:56,447][__main__][WARNING] - 1 (0.00%) training rows dropped.
+[2025-08-09 23:33:56,448][__main__][WARNING] - 0 (0.00%) validation rows dropped.
+[2025-08-09 23:36:25,897][__main__][INFO] - Data loaded: 945,150 training samples; 6,285 validation samples
+[2025-08-09 23:36:26,170][__main__][INFO] - Checking if any validation set overlaps with training set...
+[2025-08-09 23:36:26,185][__main__][INFO] - No data leakage!
+[2025-08-09 23:36:26,186][__main__][INFO] - Model checkpointing every 0.27 epochs.
+[2025-08-09 23:36:26,186][__main__][INFO] - Updates per epoch: 7,384, step_scale=0.25
+[2025-08-09 23:36:51,553][__main__][INFO] - Sample batch:
+[2025-08-09 23:36:51,554][__main__][INFO] -  - spectra.shape=torch.Size([128, 200, 2])
+[2025-08-09 23:36:51,554][__main__][INFO] -  - precursors.shape=torch.Size([128, 3])
+[2025-08-09 23:36:51,554][__main__][INFO] -  - spectra_mask.shape=torch.Size([128, 200])
+[2025-08-09 23:36:51,554][__main__][INFO] -  - peptides.shape=torch.Size([128, 41])
+[2025-08-09 23:36:51,554][__main__][INFO] -  - peptides_mask.shape=torch.Size([128, 41])
+[2025-08-09 23:36:51,723][__main__][INFO] - Model loaded with 94,619,169 parameters
+[2025-08-09 23:36:51,723][__main__][INFO] - Test forward pass:
+[2025-08-09 23:36:54,951][__main__][INFO] -  - y.shape=torch.Size([128, 42, 33])
+[2025-08-09 23:36:56,201][__main__][INFO] - Model saving enabled
+[2025-08-09 23:36:56,202][__main__][INFO] - Saving every 2000 training steps to /data/48/wuqian/fast/TipsNovo/model_save
+[2025-08-09 23:36:56,202][__main__][INFO] - Initializing Pytorch Lightning trainer.
+/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/fabric/plugins/environments/slurm.py:204: The `srun` command is available on your system but is not used. HINT: If your intention is to run Lightning on SLURM, prepend your python command with `srun` like so: srun python /home/qwu/soft/casanovo/code/test_instanovo/instanov ...
+Using 16bit Automatic Mixed Precision (AMP)
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+[2025-08-09 23:36:56,211][__main__][INFO] - InstaNovo training started.
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+[2025-08-09 23:37:00,032][__main__][INFO] - Initializing training.
+[2025-08-09 23:37:00,033][__main__][INFO] - Python version: 3.10.15 | packaged by conda-forge | (main, Oct 16 2024, 01:24:24) [GCC 13.3.0]
+[2025-08-09 23:37:00,033][__main__][INFO] - Torch version: 2.4.1+cu121
+[2025-08-09 23:37:00,033][__main__][INFO] - CUDA version: 12.1
+[2025-08-09 23:37:00,037][__main__][INFO] - Imported hydra config:
+train_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461raw_high.mgf
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+use_flash_attention: false
+conv_peak_encoder: false
+n_peaks: 200
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 10
+precursor_mass_tol: 50
+isotope_error_range:
+- 0
+- 1
+predict_batch_size: 128
+max_length: 40
+tb_summarywriter: /data/48/wuqian/fast/TipsNovo/log
+warmup_iters: 480
+max_iters: 3000000
+learning_rate: 0.0001
+train_batch_size: 128
+grad_accumulation: 1
+weight_decay: 1.0e-05
+gradient_clip_val: 10.0
+n_beams: 5
+compile_model: true
+device: auto
+n_gpu: 1
+fp16: true
+epochs: 30
+num_sanity_val_steps: 10
+console_logging_steps: 50
+tensorboard_logging_steps: 500
+report_to: null
+run_name: instanovo_300raw_high
+train_subset: 1.0
+valid_subset: 0.02
+val_check_interval: 1.0
+lazy_loading: true
+max_shard_size: 1000000
+preshuffle_shards: true
+perform_data_checks: true
+validate_precursor_mass: false
+verbose_loading: true
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save
+save_model: true
+save_weights_only: false
+ckpt_interval: 2000
+train_from_scratch: true
+residues:
+  G: 57.021464
+  A: 71.037114
+  S: 87.032028
+  P: 97.052764
+  V: 99.068414
+  T: 101.04767
+  C: 103.009185
+  L: 113.084064
+  I: 113.084064
+  'N': 114.042927
+  D: 115.026943
+  Q: 128.058578
+  K: 128.094963
+  E: 129.042593
+  M: 131.040485
+  H: 137.058912
+  F: 147.068414
+  R: 156.101111
+  'Y': 163.063329
+  W: 186.079313
+  M[UNIMOD:35]: 147.0354
+  C[UNIMOD:4]: 160.030649
+  N[UNIMOD:7]: 115.026943
+  Q[UNIMOD:7]: 129.042594
+  S[UNIMOD:21]: 166.998028
+  T[UNIMOD:21]: 181.01367
+  Y[UNIMOD:21]: 243.029329
+  '[UNIMOD:1]': 42.010565
+  '[UNIMOD:5]': 43.005814
+  '[UNIMOD:385]': -17.026549
+
+[2025-08-09 23:37:00,040][__main__][INFO] - Starting transformer training
+[2025-08-09 23:37:00,040][__main__][INFO] - Vocab: {0: '[PAD]', 1: '[SOS]', 2: '[EOS]', 3: 'G', 4: 'A', 5: 'S', 6: 'P', 7: 'V', 8: 'T', 9: 'C', 10: 'L', 11: 'I', 12: 'N', 13: 'D', 14: 'Q', 15: 'K', 16: 'E', 17: 'M', 18: 'H', 19: 'F', 20: 'R', 21: 'Y', 22: 'W', 23: 'M[UNIMOD:35]', 24: 'C[UNIMOD:4]', 25: 'N[UNIMOD:7]', 26: 'Q[UNIMOD:7]', 27: 'S[UNIMOD:21]', 28: 'T[UNIMOD:21]', 29: 'Y[UNIMOD:21]', 30: '[UNIMOD:1]', 31: '[UNIMOD:5]', 32: '[UNIMOD:385]'}
+[2025-08-09 23:37:00,040][__main__][INFO] - Loading data
+[2025-08-09 23:37:00,041][instanovo.utils.data_handler][INFO] - Loading file 001 of 001: /data/48/wuqian/Proteometools/part1/anno_mgf/1461raw_high.mgf
+[2025-08-10 00:04:17,154][instanovo.utils.data_handler][INFO] - Saving temporary file to /tmp/tmpr8ohat7k/temp_c22245cbaf974e2b9a71f882dbe1bf97.parquet
+[2025-08-10 00:04:31,451][instanovo.utils.data_handler][INFO] - Saving temporary file to /tmp/tmpr8ohat7k/temp_09ba6a32dfba46f6ae8e177ba5019406.parquet
+[2025-08-10 00:04:46,886][instanovo.utils.data_handler][INFO] - Verifying loaded data
+[2025-08-10 00:04:46,924][instanovo.utils.data_handler][INFO] - Pre-shuffling across 002 shards. This may take a while...
+[2025-08-10 00:04:46,925][instanovo.utils.data_handler][INFO] - Computing new mapping per original shard
+[2025-08-10 00:04:46,981][instanovo.utils.data_handler][INFO] - Extracting rows to create shuffled shards
+[2025-08-10 00:05:55,365][instanovo.utils.data_handler][INFO] - Writing shuffled shard 000/002 to /tmp/tmpr8ohat7k/temp_70c632359dac4654a98f06878dc2afb0.parquet [00:01:08/00:01:08, 68.383s/it]
+[2025-08-10 00:06:25,227][instanovo.utils.data_handler][INFO] - Writing shuffled shard 001/002 to /tmp/tmpr8ohat7k/temp_4bde43af855649b58c6e25aa9e699368.parquet [00:01:38/00:00:00, 49.123s/it]
+[2025-08-10 00:06:25,227][instanovo.utils.data_handler][INFO] - Removing unshuffled shards
+[2025-08-10 00:06:40,160][instanovo.utils.data_handler][INFO] - Pre-shuffle complete
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/home/qwu/soft/casanovo/code/test_instanovo/instanovo/transformer/train.py", line 1186, in main
+    train(config)
+  File "/home/qwu/soft/casanovo/code/test_instanovo/instanovo/transformer/train.py", line 1016, in train
+    trainer.fit(ptmodel, train_dl, valid_dl)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/trainer/trainer.py", line 561, in fit
+    call._call_and_handle_interrupt(
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py", line 47, in _call_and_handle_interrupt
+    return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/strategies/launchers/subprocess_script.py", line 105, in launch
+    return function(*args, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/trainer/trainer.py", line 599, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/trainer/trainer.py", line 968, in _run
+    self.strategy.setup_environment()
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/strategies/ddp.py", line 154, in setup_environment
+    self.setup_distributed()
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/strategies/ddp.py", line 203, in setup_distributed
+    _init_dist_connection(self.cluster_environment, self._process_group_backend, timeout=self._timeout)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/fabric/utilities/distributed.py", line 298, in _init_dist_connection
+    torch.distributed.init_process_group(torch_distributed_backend, rank=global_rank, world_size=world_size, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/c10d_logger.py", line 79, in wrapper
+    return func(*args, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/c10d_logger.py", line 93, in wrapper
+    func_return = func(*args, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/distributed_c10d.py", line 1361, in init_process_group
+    store, rank, world_size = next(rendezvous_iterator)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/rendezvous.py", line 258, in _env_rendezvous_handler
+    store = _create_c10d_store(master_addr, master_port, rank, world_size, timeout, use_libuv)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/rendezvous.py", line 185, in _create_c10d_store
+    return TCPStore(
+torch.distributed.DistStoreError: Timed out after 1801 seconds waiting for clients. 1/2 clients joined.
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+[2025-08-10 00:34:37,541][__main__][INFO] - Validation path not specified, generating from training set.
+[2025-08-10 00:36:46,107][__main__][INFO] - Data splits saved to /data/48/wuqian/fast/TipsNovo/model_save/splits.csv
+[2025-08-10 00:36:46,108][__main__][INFO] - Checking for unknown residues in 1,262,032 rows.
+[2025-08-10 00:36:48,830][__main__][WARNING] - Unsupported residues found in evaluation set! These rows will be dropped.
+[2025-08-10 00:36:48,831][__main__][INFO] - New residues found: 
+{'O'}
+[2025-08-10 00:36:48,831][__main__][INFO] - Residues supported: 
+{'[PAD]', 'Y', 'M[UNIMOD:35]', '[UNIMOD:1]', 'Q', 'I', 'D', 'P', 'Q[UNIMOD:7]', '[EOS]', 'Y[UNIMOD:21]', 'G', '[UNIMOD:5]', 'H', 'T[UNIMOD:21]', 'R', 'T', 'F', 'C', 'V', 'E', 'N', 'S[UNIMOD:21]', '[UNIMOD:385]', 'A', 'C[UNIMOD:4]', 'S', 'K', '[SOS]', 'M', 'W', 'L', 'N[UNIMOD:7]'}
+[2025-08-10 00:39:19,882][__main__][WARNING] - 1 (0.00%) training rows dropped.
+[2025-08-10 00:39:19,883][__main__][WARNING] - 0 (0.00%) validation rows dropped.
+[2025-08-10 00:41:54,206][__main__][INFO] - Data loaded: 945,150 training samples; 6,285 validation samples
+[2025-08-10 00:41:54,497][__main__][INFO] - Checking if any validation set overlaps with training set...
+[2025-08-10 00:41:54,511][__main__][INFO] - No data leakage!
+[2025-08-10 00:41:54,511][__main__][INFO] - Model checkpointing every 0.27 epochs.
+[2025-08-10 00:41:54,512][__main__][INFO] - Updates per epoch: 7,384, step_scale=0.25
+[2025-08-10 00:42:07,224][__main__][INFO] - Sample batch:
+[2025-08-10 00:42:07,225][__main__][INFO] -  - spectra.shape=torch.Size([128, 200, 2])
+[2025-08-10 00:42:07,225][__main__][INFO] -  - precursors.shape=torch.Size([128, 3])
+[2025-08-10 00:42:07,225][__main__][INFO] -  - spectra_mask.shape=torch.Size([128, 200])
+[2025-08-10 00:42:07,225][__main__][INFO] -  - peptides.shape=torch.Size([128, 41])
+[2025-08-10 00:42:07,225][__main__][INFO] -  - peptides_mask.shape=torch.Size([128, 41])
+[2025-08-10 00:42:07,373][__main__][INFO] - Model loaded with 94,619,169 parameters
+[2025-08-10 00:42:07,373][__main__][INFO] - Test forward pass:
+[2025-08-10 00:42:10,615][__main__][INFO] -  - y.shape=torch.Size([128, 42, 33])
+[2025-08-10 00:42:11,404][__main__][INFO] - Model saving enabled
+[2025-08-10 00:42:11,405][__main__][INFO] - Saving every 2000 training steps to /data/48/wuqian/fast/TipsNovo/model_save
+[2025-08-10 00:42:11,405][__main__][INFO] - Initializing Pytorch Lightning trainer.
+[2025-08-10 00:42:11,414][__main__][INFO] - InstaNovo training started.
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+[E810 01:12:11.535100195 socket.cpp:957] [c10d] The client socket has timed out after 1800s while trying to connect to (127.0.0.1, 38521).
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/home/qwu/soft/casanovo/code/test_instanovo/instanovo/transformer/train.py", line 1186, in main
+    train(config)
+  File "/home/qwu/soft/casanovo/code/test_instanovo/instanovo/transformer/train.py", line 1016, in train
+    trainer.fit(ptmodel, train_dl, valid_dl)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/trainer/trainer.py", line 561, in fit
+    call._call_and_handle_interrupt(
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py", line 47, in _call_and_handle_interrupt
+    return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/strategies/launchers/subprocess_script.py", line 105, in launch
+    return function(*args, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/trainer/trainer.py", line 599, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/trainer/trainer.py", line 968, in _run
+    self.strategy.setup_environment()
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/strategies/ddp.py", line 154, in setup_environment
+    self.setup_distributed()
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/pytorch/strategies/ddp.py", line 203, in setup_distributed
+    _init_dist_connection(self.cluster_environment, self._process_group_backend, timeout=self._timeout)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/lightning/fabric/utilities/distributed.py", line 298, in _init_dist_connection
+    torch.distributed.init_process_group(torch_distributed_backend, rank=global_rank, world_size=world_size, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/c10d_logger.py", line 79, in wrapper
+    return func(*args, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/c10d_logger.py", line 93, in wrapper
+    func_return = func(*args, **kwargs)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/distributed_c10d.py", line 1361, in init_process_group
+    store, rank, world_size = next(rendezvous_iterator)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/rendezvous.py", line 258, in _env_rendezvous_handler
+    store = _create_c10d_store(master_addr, master_port, rank, world_size, timeout, use_libuv)
+  File "/home/qwu/anaconda3/envs/InstaNovo/lib/python3.10/site-packages/torch/distributed/rendezvous.py", line 185, in _create_c10d_store
+    return TCPStore(
+torch.distributed.DistNetworkError: The client socket has timed out after 1800s while trying to connect to (127.0.0.1, 38521).
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

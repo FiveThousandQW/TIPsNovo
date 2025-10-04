@@ -1,0 +1,362 @@
+/home/qwu/anaconda3/envs/instanovo2/lib/python3.10/site-packages/pubchempy.py:563: SyntaxWarning: "is not" with a literal. Did you mean "!="?
+  if self.charge is not 0:
+[2025-08-25 15:03:59,495][__main__][INFO] - Initializing training.
+[2025-08-25 15:03:59,495][__main__][INFO] - Python version: 3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]
+[2025-08-25 15:03:59,495][__main__][INFO] - Torch version: 2.4.1+cu121
+[2025-08-25 15:03:59,495][__main__][INFO] - CUDA version: 12.1
+[2025-08-25 15:03:59,499][__main__][INFO] - Imported hydra config:
+train_path: /data/48/wuqian/Proteometools/part1/parquet/1461_high/*.parquet
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+use_flash_attention: false
+conv_peak_encoder: false
+n_peaks: 200
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 10
+precursor_mass_tol: 50
+isotope_error_range:
+- 0
+- 1
+predict_batch_size: 128
+max_length: 40
+tb_summarywriter: /data/48/wuqian/fast/TipsNovo/log
+warmup_iters: 480
+max_iters: 3000000
+learning_rate: 0.0001
+train_batch_size: 128
+grad_accumulation: 1
+weight_decay: 1.0e-05
+gradient_clip_val: 10.0
+n_beams: 5
+compile_model: true
+device: auto
+n_gpu: 1
+fp16: true
+epochs: 50
+num_sanity_val_steps: 10
+console_logging_steps: 50
+tensorboard_logging_steps: 500
+report_to: null
+run_name: 1461rawHigh_120m_singleGPU
+train_subset: 1
+valid_subset_of_train: 0.01
+valid_subset: 1
+val_check_interval: 1.0
+lazy_loading: true
+max_shard_size: 1000000
+preshuffle_shards: false
+perform_data_checks: true
+validate_precursor_mass: false
+verbose_loading: true
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save/
+save_model: true
+save_weights_only: false
+ckpt_interval: 2000
+train_from_scratch: true
+resume_checkpoint: null
+residues:
+  G: 57.021464
+  A: 71.037114
+  S: 87.032028
+  P: 97.052764
+  V: 99.068414
+  T: 101.04767
+  C: 103.009185
+  L: 113.084064
+  I: 113.084064
+  'N': 114.042927
+  D: 115.026943
+  Q: 128.058578
+  K: 128.094963
+  E: 129.042593
+  M: 131.040485
+  H: 137.058912
+  F: 147.068414
+  R: 156.101111
+  'Y': 163.063329
+  W: 186.079313
+  M[UNIMOD:35]: 147.0354
+  C[UNIMOD:4]: 160.030649
+  N[UNIMOD:7]: 115.026943
+  Q[UNIMOD:7]: 129.042594
+  S[UNIMOD:21]: 166.998028
+  T[UNIMOD:21]: 181.01367
+  Y[UNIMOD:21]: 243.029329
+  '[UNIMOD:1]': 42.010565
+  '[UNIMOD:5]': 43.005814
+  '[UNIMOD:385]': -17.026549
+
+[2025-08-25 15:03:59,510][__main__][INFO] - Starting transformer training
+[2025-08-25 15:03:59,510][__main__][INFO] - Vocab: {0: '[PAD]', 1: '[SOS]', 2: '[EOS]', 3: 'G', 4: 'A', 5: 'S', 6: 'P', 7: 'V', 8: 'T', 9: 'C', 10: 'L', 11: 'I', 12: 'N', 13: 'D', 14: 'Q', 15: 'K', 16: 'E', 17: 'M', 18: 'H', 19: 'F', 20: 'R', 21: 'Y', 22: 'W', 23: 'M[UNIMOD:35]', 24: 'C[UNIMOD:4]', 25: 'N[UNIMOD:7]', 26: 'Q[UNIMOD:7]', 27: 'S[UNIMOD:21]', 28: 'T[UNIMOD:21]', 29: 'Y[UNIMOD:21]', 30: '[UNIMOD:1]', 31: '[UNIMOD:5]', 32: '[UNIMOD:385]'}
+[2025-08-25 15:03:59,510][__main__][INFO] - Loading data
+[2025-08-25 15:04:23,113][instanovo.utils.data_handler][INFO] - Verifying loaded data
+[2025-08-25 15:04:37,505][__main__][INFO] - Validation path not specified, generating from training set.
+[2025-08-25 15:05:50,181][__main__][INFO] - Data splits saved to /data/48/wuqian/fast/TipsNovo/model_save/splits.csv
+[2025-08-25 15:05:50,181][__main__][INFO] - Checking for unknown residues in 1,262,032 rows.
+[2025-08-25 15:05:52,935][__main__][WARNING] - Unsupported residues found in evaluation set! These rows will be dropped.
+[2025-08-25 15:05:52,936][__main__][INFO] - New residues found: 
+{'O'}
+[2025-08-25 15:05:52,936][__main__][INFO] - Residues supported: 
+{'H', 'Y[UNIMOD:21]', 'T[UNIMOD:21]', 'Q', 'A', 'M[UNIMOD:35]', 'L', '[EOS]', 'W', 'P', 'C', 'R', 'N[UNIMOD:7]', 'F', 'K', 'M', 'V', 'S[UNIMOD:21]', 'T', 'Q[UNIMOD:7]', 'S', 'E', '[UNIMOD:5]', 'D', 'N', '[UNIMOD:1]', 'Y', 'C[UNIMOD:4]', '[UNIMOD:385]', 'G', '[SOS]', 'I', '[PAD]'}
+[2025-08-25 15:07:13,782][__main__][WARNING] - 1 (0.00%) training rows dropped.
+[2025-08-25 15:07:13,782][__main__][WARNING] - 0 (0.00%) validation rows dropped.
+[2025-08-25 15:08:36,214][__main__][INFO] - Data loaded: 1,246,259 training samples; 15,772 validation samples
+[2025-08-25 15:08:36,642][__main__][INFO] - Checking if any validation set overlaps with training set...
+/home/qwu/soft/casanovo/code/test_instanovo/instanovo/transformer/train.py:737: DeprecationWarning: `is_in` with a collection of the same datatype is ambiguous and deprecated.
+Please use `implode` to return to previous behavior.
+
+See https://github.com/pola-rs/polars/issues/22149 for more information.
+  leakage = any(valid_sequences.is_in(train_sequences))
+[2025-08-25 15:08:36,689][__main__][INFO] - No data leakage!
+[2025-08-25 15:08:36,689][__main__][INFO] - Model checkpointing every 0.21 epochs.
+[2025-08-25 15:08:36,690][__main__][INFO] - Updates per epoch: 9,737, step_scale=0.25
+[2025-08-25 15:08:59,400][__main__][INFO] - Sample batch:
+[2025-08-25 15:08:59,400][__main__][INFO] -  - spectra.shape=torch.Size([128, 200, 2])
+[2025-08-25 15:08:59,400][__main__][INFO] -  - precursors.shape=torch.Size([128, 3])
+[2025-08-25 15:08:59,400][__main__][INFO] -  - spectra_mask.shape=torch.Size([128, 200])
+[2025-08-25 15:08:59,400][__main__][INFO] -  - peptides.shape=torch.Size([128, 41])
+[2025-08-25 15:08:59,400][__main__][INFO] -  - peptides_mask.shape=torch.Size([128, 41])
+[2025-08-25 15:08:59,568][__main__][INFO] - Model loaded with 94,619,169 parameters
+[2025-08-25 15:08:59,568][__main__][INFO] - Test forward pass:
+[2025-08-25 15:09:07,354][__main__][INFO] -  - y.shape=torch.Size([128, 42, 33])
+[2025-08-25 15:09:09,118][__main__][INFO] - Model saving enabled
+[2025-08-25 15:09:09,118][__main__][INFO] - Saving every 2000 training steps to /data/48/wuqian/fast/TipsNovo/model_save/
+[2025-08-25 15:09:09,118][__main__][INFO] - Initializing Pytorch Lightning trainer.
+/home/qwu/anaconda3/envs/instanovo2/lib/python3.10/site-packages/lightning/fabric/plugins/environments/slurm.py:204: The `srun` command is available on your system but is not used. HINT: If your intention is to run Lightning on SLURM, prepend your python command with `srun` like so: srun python /home/qwu/soft/casanovo/code/test_instanovo/instanov ...
+Using 16bit Automatic Mixed Precision (AMP)
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+[2025-08-25 15:09:09,125][__main__][INFO] - InstaNovo training started.
+/home/qwu/anaconda3/envs/instanovo2/lib/python3.10/site-packages/lightning/pytorch/callbacks/model_checkpoint.py:658: Checkpoint directory /data/48/wuqian/fast/TipsNovo/model_save exists and is not empty.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name    | Type             | Params | Mode 
+-----------------------------------------------------
+0 | model   | InstaNovo        | 94.6 M | train
+1 | loss_fn | CrossEntropyLoss | 0      | train
+-----------------------------------------------------
+94.6 M    Trainable params
+0         Non-trainable params
+94.6 M    Total params
+378.477   Total estimated model params size (MB)
+240       Modules in train mode
+0         Modules in eval mode
+[2025-08-25 15:09:14,965][__main__][INFO] - [VALIDATION] [Epoch 00/49] Starting validation.
+[2025-08-25 15:09:33,870][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000012] [Batch 00012/09737] [00:00:05/01:12:49, 0.449s/it]: train_loss_raw=3.3271, running_loss=3.6040, LR=0.000002
+[2025-08-25 15:09:39,701][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000024] [Batch 00024/09737] [00:00:11/01:15:41, 0.468s/it]: train_loss_raw=3.0593, running_loss=3.5544, LR=0.000005
+[2025-08-25 15:09:45,494][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000036] [Batch 00036/09737] [00:00:17/01:16:25, 0.473s/it]: train_loss_raw=2.9755, running_loss=3.4938, LR=0.000007
+[2025-08-25 15:09:51,431][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000048] [Batch 00048/09737] [00:00:22/01:17:12, 0.478s/it]: train_loss_raw=2.9507, running_loss=3.4342, LR=0.000010
+[2025-08-25 15:09:58,898][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000060] [Batch 00060/09737] [00:00:30/01:21:45, 0.507s/it]: train_loss_raw=2.8803, running_loss=3.3768, LR=0.000012
+[2025-08-25 15:10:07,885][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000072] [Batch 00072/09737] [00:00:39/01:28:09, 0.547s/it]: train_loss_raw=2.7792, running_loss=3.3155, LR=0.000015
+[2025-08-25 15:10:17,033][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000084] [Batch 00084/09737] [00:00:48/01:32:59, 0.578s/it]: train_loss_raw=2.7938, running_loss=3.2553, LR=0.000017
+[2025-08-25 15:10:26,556][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000096] [Batch 00096/09737] [00:00:58/01:37:12, 0.605s/it]: train_loss_raw=2.7553, running_loss=3.1982, LR=0.000020
+[2025-08-25 15:10:35,485][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000108] [Batch 00108/09737] [00:01:07/01:39:34, 0.620s/it]: train_loss_raw=2.7315, running_loss=3.1454, LR=0.000022
+[2025-08-25 15:10:44,195][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000120] [Batch 00120/09737] [00:01:15/01:41:07, 0.631s/it]: train_loss_raw=2.7415, running_loss=3.0991, LR=0.000025
+[2025-08-25 15:10:52,937][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000132] [Batch 00132/09737] [00:01:24/01:42:25, 0.640s/it]: train_loss_raw=2.7294, running_loss=3.0561, LR=0.000027
+[2025-08-25 15:10:59,898][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000144] [Batch 00144/09737] [00:01:31/01:41:30, 0.635s/it]: train_loss_raw=2.7355, running_loss=3.0188, LR=0.000030
+[2025-08-25 15:11:05,399][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000156] [Batch 00156/09737] [00:01:36/01:39:12, 0.621s/it]: train_loss_raw=2.7139, running_loss=2.9846, LR=0.000032
+[2025-08-25 15:11:10,753][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000168] [Batch 00168/09737] [00:01:42/01:37:05, 0.609s/it]: train_loss_raw=2.6902, running_loss=2.9548, LR=0.000035
+[2025-08-25 15:11:16,331][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000180] [Batch 00180/09737] [00:01:47/01:35:26, 0.599s/it]: train_loss_raw=2.7179, running_loss=2.9279, LR=0.000037
+[2025-08-25 15:11:22,043][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000192] [Batch 00192/09737] [00:01:53/01:34:05, 0.591s/it]: train_loss_raw=2.7086, running_loss=2.9031, LR=0.000040
+[2025-08-25 15:11:27,683][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000204] [Batch 00204/09737] [00:01:59/01:32:50, 0.584s/it]: train_loss_raw=2.6854, running_loss=2.8797, LR=0.000042
+[2025-08-25 15:11:33,012][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000216] [Batch 00216/09737] [00:02:04/01:31:29, 0.577s/it]: train_loss_raw=2.6783, running_loss=2.8601, LR=0.000045
+[2025-08-25 15:11:38,343][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000228] [Batch 00228/09737] [00:02:09/01:30:16, 0.570s/it]: train_loss_raw=2.7022, running_loss=2.8419, LR=0.000047
+[2025-08-25 15:11:44,048][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000240] [Batch 00240/09737] [00:02:15/01:29:24, 0.565s/it]: train_loss_raw=2.7186, running_loss=2.8261, LR=0.000050
+[2025-08-25 15:11:49,802][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000252] [Batch 00252/09737] [00:02:21/01:28:39, 0.561s/it]: train_loss_raw=2.6888, running_loss=2.8113, LR=0.000052
+[2025-08-25 15:11:55,542][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000264] [Batch 00264/09737] [00:02:27/01:27:56, 0.557s/it]: train_loss_raw=2.6784, running_loss=2.7987, LR=0.000055
+[2025-08-25 15:12:01,319][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000276] [Batch 00276/09737] [00:02:32/01:27:19, 0.554s/it]: train_loss_raw=2.6755, running_loss=2.7863, LR=0.000057
+[2025-08-25 15:12:07,095][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000288] [Batch 00288/09737] [00:02:38/01:26:44, 0.551s/it]: train_loss_raw=2.6654, running_loss=2.7762, LR=0.000060
+[2025-08-25 15:12:13,122][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000300] [Batch 00300/09737] [00:02:44/01:26:19, 0.549s/it]: train_loss_raw=2.7049, running_loss=2.7671, LR=0.000062
+[2025-08-25 15:12:18,868][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000312] [Batch 00312/09737] [00:02:50/01:25:47, 0.546s/it]: train_loss_raw=2.7400, running_loss=2.7590, LR=0.000065
+[2025-08-25 15:12:24,593][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000324] [Batch 00324/09737] [00:02:56/01:25:16, 0.544s/it]: train_loss_raw=2.6929, running_loss=2.7511, LR=0.000067
+[2025-08-25 15:12:30,427][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000336] [Batch 00336/09737] [00:03:01/01:24:50, 0.542s/it]: train_loss_raw=2.6911, running_loss=2.7433, LR=0.000070
+[2025-08-25 15:12:35,854][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000348] [Batch 00348/09737] [00:03:07/01:24:15, 0.538s/it]: train_loss_raw=2.6726, running_loss=2.7363, LR=0.000072
+[2025-08-25 15:12:41,567][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000360] [Batch 00360/09737] [00:03:13/01:23:49, 0.536s/it]: train_loss_raw=2.6840, running_loss=2.7306, LR=0.000075
+[2025-08-25 15:12:47,286][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000372] [Batch 00372/09737] [00:03:18/01:23:24, 0.534s/it]: train_loss_raw=2.6677, running_loss=2.7247, LR=0.000077
+[2025-08-25 15:12:52,581][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000384] [Batch 00384/09737] [00:03:24/01:22:51, 0.532s/it]: train_loss_raw=2.6564, running_loss=2.7198, LR=0.000080
+[2025-08-25 15:12:57,854][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000396] [Batch 00396/09737] [00:03:29/01:22:18, 0.529s/it]: train_loss_raw=2.6641, running_loss=2.7154, LR=0.000082
+[2025-08-25 15:13:03,120][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000408] [Batch 00408/09737] [00:03:34/01:21:47, 0.526s/it]: train_loss_raw=2.6777, running_loss=2.7102, LR=0.000085
+[2025-08-25 15:13:08,737][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000420] [Batch 00420/09737] [00:03:40/01:21:26, 0.524s/it]: train_loss_raw=2.6740, running_loss=2.7045, LR=0.000087
+[2025-08-25 15:13:14,405][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000432] [Batch 00432/09737] [00:03:45/01:21:06, 0.523s/it]: train_loss_raw=2.6796, running_loss=2.7009, LR=0.000090
+[2025-08-25 15:13:20,114][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000444] [Batch 00444/09737] [00:03:51/01:20:48, 0.522s/it]: train_loss_raw=2.6789, running_loss=2.6986, LR=0.000092
+[2025-08-25 15:13:25,821][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000456] [Batch 00456/09737] [00:03:57/01:20:30, 0.520s/it]: train_loss_raw=2.6811, running_loss=2.6956, LR=0.000095
+[2025-08-25 15:13:31,654][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000468] [Batch 00468/09737] [00:04:03/01:20:16, 0.520s/it]: train_loss_raw=2.6724, running_loss=2.6910, LR=0.000097
+[2025-08-25 15:13:37,133][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000480] [Batch 00480/09737] [00:04:08/01:19:55, 0.518s/it]: train_loss_raw=2.6584, running_loss=2.6889, LR=0.000100
+[2025-08-25 15:13:42,686][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000492] [Batch 00492/09737] [00:04:14/01:19:36, 0.517s/it]: train_loss_raw=2.6855, running_loss=2.6860, LR=0.000100
+[2025-08-25 15:13:48,341][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000504] [Batch 00504/09737] [00:04:19/01:19:20, 0.516s/it]: train_loss_raw=2.6713, running_loss=2.6837, LR=0.000100
+[2025-08-25 15:13:54,083][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000516] [Batch 00516/09737] [00:04:25/01:19:06, 0.515s/it]: train_loss_raw=2.6670, running_loss=2.6820, LR=0.000100
+[2025-08-25 15:13:59,770][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000528] [Batch 00528/09737] [00:04:31/01:18:51, 0.514s/it]: train_loss_raw=2.6800, running_loss=2.6795, LR=0.000100
+[2025-08-25 15:14:05,553][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000540] [Batch 00540/09737] [00:04:37/01:18:38, 0.513s/it]: train_loss_raw=2.6044, running_loss=2.6766, LR=0.000100
+[2025-08-25 15:14:11,325][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000552] [Batch 00552/09737] [00:04:42/01:18:26, 0.512s/it]: train_loss_raw=2.6495, running_loss=2.6746, LR=0.000100
+[2025-08-25 15:14:17,061][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000564] [Batch 00564/09737] [00:04:48/01:18:13, 0.512s/it]: train_loss_raw=2.6544, running_loss=2.6727, LR=0.000100
+[2025-08-25 15:14:22,585][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000576] [Batch 00576/09737] [00:04:54/01:17:57, 0.511s/it]: train_loss_raw=2.7056, running_loss=2.6726, LR=0.000100
+[2025-08-25 15:14:27,872][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000588] [Batch 00588/09737] [00:04:59/01:17:38, 0.509s/it]: train_loss_raw=2.6728, running_loss=2.6720, LR=0.000100
+[2025-08-25 15:14:33,302][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000600] [Batch 00600/09737] [00:05:04/01:17:21, 0.508s/it]: train_loss_raw=2.6305, running_loss=2.6701, LR=0.000100
+[2025-08-25 15:14:38,590][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000612] [Batch 00612/09737] [00:05:10/01:17:03, 0.507s/it]: train_loss_raw=2.6635, running_loss=2.6684, LR=0.000100
+[2025-08-25 15:14:43,883][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000624] [Batch 00624/09737] [00:05:15/01:16:46, 0.505s/it]: train_loss_raw=2.6414, running_loss=2.6669, LR=0.000100
+[2025-08-25 15:14:49,478][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000636] [Batch 00636/09737] [00:05:20/01:16:33, 0.505s/it]: train_loss_raw=2.6349, running_loss=2.6646, LR=0.000100
+[2025-08-25 15:14:55,415][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000648] [Batch 00648/09737] [00:05:26/01:16:25, 0.505s/it]: train_loss_raw=2.6424, running_loss=2.6633, LR=0.000100
+[2025-08-25 15:15:01,147][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000660] [Batch 00660/09737] [00:05:32/01:16:15, 0.504s/it]: train_loss_raw=2.6537, running_loss=2.6613, LR=0.000100
+[2025-08-25 15:15:06,794][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000672] [Batch 00672/09737] [00:05:38/01:16:03, 0.503s/it]: train_loss_raw=2.6279, running_loss=2.6593, LR=0.000100
+[2025-08-25 15:15:12,217][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000684] [Batch 00684/09737] [00:05:43/01:15:49, 0.503s/it]: train_loss_raw=2.6472, running_loss=2.6564, LR=0.000100
+[2025-08-25 15:15:17,531][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000696] [Batch 00696/09737] [00:05:49/01:15:34, 0.502s/it]: train_loss_raw=2.6458, running_loss=2.6542, LR=0.000100
+[2025-08-25 15:15:22,889][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000708] [Batch 00708/09737] [00:05:54/01:15:19, 0.501s/it]: train_loss_raw=2.6538, running_loss=2.6529, LR=0.000100
+[2025-08-25 15:15:28,485][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000720] [Batch 00720/09737] [00:06:00/01:15:08, 0.500s/it]: train_loss_raw=2.6737, running_loss=2.6506, LR=0.000100
+[2025-08-25 15:15:33,941][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000732] [Batch 00732/09737] [00:06:05/01:14:55, 0.499s/it]: train_loss_raw=2.6390, running_loss=2.6487, LR=0.000100
+[2025-08-25 15:15:39,525][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000744] [Batch 00744/09737] [00:06:11/01:14:44, 0.499s/it]: train_loss_raw=2.6266, running_loss=2.6464, LR=0.000100
+[2025-08-25 15:15:44,980][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000756] [Batch 00756/09737] [00:06:16/01:14:32, 0.498s/it]: train_loss_raw=2.6402, running_loss=2.6443, LR=0.000100
+[2025-08-25 15:15:50,460][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000768] [Batch 00768/09737] [00:06:21/01:14:20, 0.497s/it]: train_loss_raw=2.6177, running_loss=2.6440, LR=0.000100
+[2025-08-25 15:15:55,902][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000780] [Batch 00780/09737] [00:06:27/01:14:08, 0.497s/it]: train_loss_raw=2.6443, running_loss=2.6410, LR=0.000100
+[2025-08-25 15:16:01,373][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000792] [Batch 00792/09737] [00:06:32/01:13:57, 0.496s/it]: train_loss_raw=2.5684, running_loss=2.6376, LR=0.000100
+[2025-08-25 15:16:07,049][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000804] [Batch 00804/09737] [00:06:38/01:13:48, 0.496s/it]: train_loss_raw=2.6113, running_loss=2.6355, LR=0.000100
+[2025-08-25 15:16:12,535][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000816] [Batch 00816/09737] [00:06:44/01:13:37, 0.495s/it]: train_loss_raw=2.6458, running_loss=2.6332, LR=0.000100
+[2025-08-25 15:16:18,079][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000828] [Batch 00828/09737] [00:06:49/01:13:27, 0.495s/it]: train_loss_raw=2.5912, running_loss=2.6298, LR=0.000100
+[2025-08-25 15:16:23,400][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000840] [Batch 00840/09737] [00:06:54/01:13:14, 0.494s/it]: train_loss_raw=2.5864, running_loss=2.6278, LR=0.000100
+[2025-08-25 15:16:28,657][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000852] [Batch 00852/09737] [00:07:00/01:13:01, 0.493s/it]: train_loss_raw=2.6071, running_loss=2.6246, LR=0.000100
+[2025-08-25 15:16:34,202][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000864] [Batch 00864/09737] [00:07:05/01:12:52, 0.493s/it]: train_loss_raw=2.5493, running_loss=2.6225, LR=0.000100
+[2025-08-25 15:16:39,768][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000876] [Batch 00876/09737] [00:07:11/01:12:42, 0.492s/it]: train_loss_raw=2.6149, running_loss=2.6222, LR=0.000100
+[2025-08-25 15:16:45,309][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000888] [Batch 00888/09737] [00:07:16/01:12:33, 0.492s/it]: train_loss_raw=2.6287, running_loss=2.6188, LR=0.000100
+[2025-08-25 15:16:51,017][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000900] [Batch 00900/09737] [00:07:22/01:12:25, 0.492s/it]: train_loss_raw=2.6589, running_loss=2.6178, LR=0.000100
+[2025-08-25 15:16:56,698][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000912] [Batch 00912/09737] [00:07:28/01:12:17, 0.491s/it]: train_loss_raw=2.6138, running_loss=2.6145, LR=0.000100
+[2025-08-25 15:17:01,988][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000924] [Batch 00924/09737] [00:07:33/01:12:05, 0.491s/it]: train_loss_raw=2.6205, running_loss=2.6150, LR=0.000100
+[2025-08-25 15:17:07,464][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000936] [Batch 00936/09737] [00:07:38/01:11:55, 0.490s/it]: train_loss_raw=2.5927, running_loss=2.6129, LR=0.000100
+[2025-08-25 15:17:12,712][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000948] [Batch 00948/09737] [00:07:44/01:11:43, 0.490s/it]: train_loss_raw=2.6192, running_loss=2.6105, LR=0.000100
+[2025-08-25 15:17:18,056][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000960] [Batch 00960/09737] [00:07:49/01:11:33, 0.489s/it]: train_loss_raw=2.5354, running_loss=2.6054, LR=0.000100
+[2025-08-25 15:17:23,432][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000972] [Batch 00972/09737] [00:07:54/01:11:22, 0.489s/it]: train_loss_raw=2.4988, running_loss=2.6021, LR=0.000100
+[2025-08-25 15:17:28,748][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000984] [Batch 00984/09737] [00:08:00/01:11:12, 0.488s/it]: train_loss_raw=2.5660, running_loss=2.6022, LR=0.000100
+[2025-08-25 15:17:34,024][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 000996] [Batch 00996/09737] [00:08:05/01:11:01, 0.487s/it]: train_loss_raw=2.5408, running_loss=2.5992, LR=0.000100
+[2025-08-25 15:17:39,284][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001008] [Batch 01008/09737] [00:08:10/01:10:50, 0.487s/it]: train_loss_raw=2.5949, running_loss=2.5976, LR=0.000100
+[2025-08-25 15:17:44,538][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001020] [Batch 01020/09737] [00:08:16/01:10:39, 0.486s/it]: train_loss_raw=2.5327, running_loss=2.5940, LR=0.000100
+[2025-08-25 15:17:49,815][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001032] [Batch 01032/09737] [00:08:21/01:10:28, 0.486s/it]: train_loss_raw=2.5891, running_loss=2.5916, LR=0.000100
+[2025-08-25 15:17:55,086][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001044] [Batch 01044/09737] [00:08:26/01:10:18, 0.485s/it]: train_loss_raw=2.5519, running_loss=2.5912, LR=0.000100
+[2025-08-25 15:18:00,348][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001056] [Batch 01056/09737] [00:08:31/01:10:07, 0.485s/it]: train_loss_raw=2.6090, running_loss=2.5901, LR=0.000100
+[2025-08-25 15:18:05,622][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001068] [Batch 01068/09737] [00:08:37/01:09:57, 0.484s/it]: train_loss_raw=2.5743, running_loss=2.5907, LR=0.000100
+[2025-08-25 15:18:10,889][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001080] [Batch 01080/09737] [00:08:42/01:09:47, 0.484s/it]: train_loss_raw=2.5792, running_loss=2.5854, LR=0.000100
+[2025-08-25 15:18:16,241][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001092] [Batch 01092/09737] [00:08:47/01:09:38, 0.483s/it]: train_loss_raw=2.5996, running_loss=2.5830, LR=0.000100
+[2025-08-25 15:18:21,961][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001104] [Batch 01104/09737] [00:08:53/01:09:31, 0.483s/it]: train_loss_raw=2.5819, running_loss=2.5802, LR=0.000100
+[2025-08-25 15:18:27,538][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001116] [Batch 01116/09737] [00:08:59/01:09:24, 0.483s/it]: train_loss_raw=2.5968, running_loss=2.5813, LR=0.000100
+[2025-08-25 15:18:33,128][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001128] [Batch 01128/09737] [00:09:04/01:09:16, 0.483s/it]: train_loss_raw=2.5466, running_loss=2.5802, LR=0.000100
+[2025-08-25 15:18:38,401][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001140] [Batch 01140/09737] [00:09:09/01:09:07, 0.482s/it]: train_loss_raw=2.5852, running_loss=2.5790, LR=0.000100
+[2025-08-25 15:18:43,653][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001152] [Batch 01152/09737] [00:09:15/01:08:57, 0.482s/it]: train_loss_raw=2.5833, running_loss=2.5791, LR=0.000100
+[2025-08-25 15:18:48,948][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001164] [Batch 01164/09737] [00:09:20/01:08:47, 0.482s/it]: train_loss_raw=2.5633, running_loss=2.5769, LR=0.000100
+[2025-08-25 15:18:54,464][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001176] [Batch 01176/09737] [00:09:25/01:08:40, 0.481s/it]: train_loss_raw=2.5594, running_loss=2.5754, LR=0.000100
+[2025-08-25 15:18:59,982][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001188] [Batch 01188/09737] [00:09:31/01:08:32, 0.481s/it]: train_loss_raw=2.5605, running_loss=2.5725, LR=0.000100
+[2025-08-25 15:19:05,591][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001200] [Batch 01200/09737] [00:09:37/01:08:25, 0.481s/it]: train_loss_raw=2.5406, running_loss=2.5703, LR=0.000100
+[2025-08-25 15:19:11,350][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001212] [Batch 01212/09737] [00:09:42/01:08:19, 0.481s/it]: train_loss_raw=2.5700, running_loss=2.5692, LR=0.000100
+[2025-08-25 15:19:17,211][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001224] [Batch 01224/09737] [00:09:48/01:08:14, 0.481s/it]: train_loss_raw=2.5765, running_loss=2.5666, LR=0.000100
+[2025-08-25 15:19:22,928][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001236] [Batch 01236/09737] [00:09:54/01:08:08, 0.481s/it]: train_loss_raw=2.4934, running_loss=2.5645, LR=0.000100
+[2025-08-25 15:19:28,685][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001248] [Batch 01248/09737] [00:10:00/01:08:02, 0.481s/it]: train_loss_raw=2.5667, running_loss=2.5638, LR=0.000100
+[2025-08-25 15:19:34,698][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001260] [Batch 01260/09737] [00:10:06/01:07:58, 0.481s/it]: train_loss_raw=2.5652, running_loss=2.5652, LR=0.000100
+[2025-08-25 15:19:40,407][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001272] [Batch 01272/09737] [00:10:11/01:07:52, 0.481s/it]: train_loss_raw=2.5167, running_loss=2.5603, LR=0.000100
+[2025-08-25 15:19:45,836][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001284] [Batch 01284/09737] [00:10:17/01:07:44, 0.481s/it]: train_loss_raw=2.4727, running_loss=2.5578, LR=0.000100
+[2025-08-25 15:19:51,570][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001296] [Batch 01296/09737] [00:10:23/01:07:38, 0.481s/it]: train_loss_raw=2.5806, running_loss=2.5542, LR=0.000100
+[2025-08-25 15:19:57,340][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001308] [Batch 01308/09737] [00:10:28/01:07:32, 0.481s/it]: train_loss_raw=2.5245, running_loss=2.5516, LR=0.000100
+[2025-08-25 15:20:03,098][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001320] [Batch 01320/09737] [00:10:34/01:07:26, 0.481s/it]: train_loss_raw=2.5380, running_loss=2.5502, LR=0.000100
+[2025-08-25 15:20:08,914][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001332] [Batch 01332/09737] [00:10:40/01:07:21, 0.481s/it]: train_loss_raw=2.4782, running_loss=2.5481, LR=0.000100
+[2025-08-25 15:20:14,471][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001344] [Batch 01344/09737] [00:10:45/01:07:14, 0.481s/it]: train_loss_raw=2.5586, running_loss=2.5446, LR=0.000100
+[2025-08-25 15:20:20,152][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001356] [Batch 01356/09737] [00:10:51/01:07:07, 0.481s/it]: train_loss_raw=2.4688, running_loss=2.5437, LR=0.000100
+[2025-08-25 15:20:25,864][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001368] [Batch 01368/09737] [00:10:57/01:07:01, 0.481s/it]: train_loss_raw=2.5202, running_loss=2.5442, LR=0.000100
+[2025-08-25 15:20:31,652][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001380] [Batch 01380/09737] [00:11:03/01:06:56, 0.481s/it]: train_loss_raw=2.5648, running_loss=2.5429, LR=0.000100
+[2025-08-25 15:20:37,758][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001392] [Batch 01392/09737] [00:11:09/01:06:52, 0.481s/it]: train_loss_raw=2.5250, running_loss=2.5398, LR=0.000100
+[2025-08-25 15:20:43,283][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001404] [Batch 01404/09737] [00:11:14/01:06:45, 0.481s/it]: train_loss_raw=2.5935, running_loss=2.5397, LR=0.000100
+[2025-08-25 15:20:49,199][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001416] [Batch 01416/09737] [00:11:20/01:06:40, 0.481s/it]: train_loss_raw=2.5606, running_loss=2.5374, LR=0.000100
+[2025-08-25 15:20:54,567][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001428] [Batch 01428/09737] [00:11:26/01:06:32, 0.480s/it]: train_loss_raw=2.5543, running_loss=2.5348, LR=0.000100
+[2025-08-25 15:21:00,253][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001440] [Batch 01440/09737] [00:11:31/01:06:25, 0.480s/it]: train_loss_raw=2.4822, running_loss=2.5342, LR=0.000100
+[2025-08-25 15:21:05,988][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001452] [Batch 01452/09737] [00:11:37/01:06:19, 0.480s/it]: train_loss_raw=2.5095, running_loss=2.5346, LR=0.000100
+[2025-08-25 15:21:11,756][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001464] [Batch 01464/09737] [00:11:43/01:06:14, 0.480s/it]: train_loss_raw=2.4822, running_loss=2.5334, LR=0.000100
+[2025-08-25 15:21:17,599][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001476] [Batch 01476/09737] [00:11:49/01:06:08, 0.480s/it]: train_loss_raw=2.5255, running_loss=2.5352, LR=0.000100
+[2025-08-25 15:21:23,101][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001488] [Batch 01488/09737] [00:11:54/01:06:01, 0.480s/it]: train_loss_raw=2.5129, running_loss=2.5346, LR=0.000100
+[2025-08-25 15:21:28,842][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001500] [Batch 01500/09737] [00:12:00/01:05:55, 0.480s/it]: train_loss_raw=2.5351, running_loss=2.5331, LR=0.000100
+[2025-08-25 15:21:34,592][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001512] [Batch 01512/09737] [00:12:06/01:05:49, 0.480s/it]: train_loss_raw=2.4695, running_loss=2.5318, LR=0.000100
+[2025-08-25 15:21:40,364][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001524] [Batch 01524/09737] [00:12:11/01:05:44, 0.480s/it]: train_loss_raw=2.4899, running_loss=2.5315, LR=0.000100
+[2025-08-25 15:21:46,128][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001536] [Batch 01536/09737] [00:12:17/01:05:38, 0.480s/it]: train_loss_raw=2.5590, running_loss=2.5315, LR=0.000100
+[2025-08-25 15:21:51,883][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001548] [Batch 01548/09737] [00:12:23/01:05:32, 0.480s/it]: train_loss_raw=2.4710, running_loss=2.5309, LR=0.000100
+[2025-08-25 15:21:57,650][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001560] [Batch 01560/09737] [00:12:29/01:05:26, 0.480s/it]: train_loss_raw=2.5363, running_loss=2.5309, LR=0.000100
+[2025-08-25 15:22:03,478][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001572] [Batch 01572/09737] [00:12:34/01:05:21, 0.480s/it]: train_loss_raw=2.4681, running_loss=2.5303, LR=0.000100
+[2025-08-25 15:22:09,305][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001584] [Batch 01584/09737] [00:12:40/01:05:16, 0.480s/it]: train_loss_raw=2.5209, running_loss=2.5301, LR=0.000100
+[2025-08-25 15:22:15,409][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001596] [Batch 01596/09737] [00:12:46/01:05:12, 0.481s/it]: train_loss_raw=2.5460, running_loss=2.5312, LR=0.000100
+[2025-08-25 15:22:21,081][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001608] [Batch 01608/09737] [00:12:52/01:05:05, 0.480s/it]: train_loss_raw=2.4481, running_loss=2.5301, LR=0.000100
+[2025-08-25 15:22:26,659][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001620] [Batch 01620/09737] [00:12:58/01:04:59, 0.480s/it]: train_loss_raw=2.5408, running_loss=2.5299, LR=0.000100
+[2025-08-25 15:22:32,430][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001632] [Batch 01632/09737] [00:13:03/01:04:53, 0.480s/it]: train_loss_raw=2.5518, running_loss=2.5285, LR=0.000100
+[2025-08-25 15:22:38,271][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001644] [Batch 01644/09737] [00:13:09/01:04:47, 0.480s/it]: train_loss_raw=2.5490, running_loss=2.5265, LR=0.000100
+[2025-08-25 15:22:43,622][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001656] [Batch 01656/09737] [00:13:15/01:04:40, 0.480s/it]: train_loss_raw=2.4687, running_loss=2.5255, LR=0.000100
+[2025-08-25 15:22:48,994][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001668] [Batch 01668/09737] [00:13:20/01:04:32, 0.480s/it]: train_loss_raw=2.5416, running_loss=2.5232, LR=0.000100
+[2025-08-25 15:22:54,548][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001680] [Batch 01680/09737] [00:13:26/01:04:25, 0.480s/it]: train_loss_raw=2.5220, running_loss=2.5242, LR=0.000100
+[2025-08-25 15:23:00,378][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001692] [Batch 01692/09737] [00:13:31/01:04:20, 0.480s/it]: train_loss_raw=2.4601, running_loss=2.5237, LR=0.000100
+[2025-08-25 15:23:06,110][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001704] [Batch 01704/09737] [00:13:37/01:04:14, 0.480s/it]: train_loss_raw=2.5294, running_loss=2.5252, LR=0.000100
+[2025-08-25 15:23:11,969][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001716] [Batch 01716/09737] [00:13:43/01:04:09, 0.480s/it]: train_loss_raw=2.5488, running_loss=2.5235, LR=0.000100
+[2025-08-25 15:23:17,702][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001728] [Batch 01728/09737] [00:13:49/01:04:03, 0.480s/it]: train_loss_raw=2.5698, running_loss=2.5246, LR=0.000100
+[2025-08-25 15:23:23,313][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001740] [Batch 01740/09737] [00:13:54/01:03:56, 0.480s/it]: train_loss_raw=2.4752, running_loss=2.5208, LR=0.000100
+[2025-08-25 15:23:29,038][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001752] [Batch 01752/09737] [00:14:00/01:03:50, 0.480s/it]: train_loss_raw=2.5066, running_loss=2.5211, LR=0.000100
+[2025-08-25 15:23:34,782][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001764] [Batch 01764/09737] [00:14:06/01:03:45, 0.480s/it]: train_loss_raw=2.5685, running_loss=2.5193, LR=0.000100
+[2025-08-25 15:23:40,508][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001776] [Batch 01776/09737] [00:14:12/01:03:39, 0.480s/it]: train_loss_raw=2.4854, running_loss=2.5182, LR=0.000100
+[2025-08-25 15:23:46,311][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001788] [Batch 01788/09737] [00:14:17/01:03:33, 0.480s/it]: train_loss_raw=2.4907, running_loss=2.5176, LR=0.000100
+[2025-08-25 15:23:51,859][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001800] [Batch 01800/09737] [00:14:23/01:03:27, 0.480s/it]: train_loss_raw=2.5520, running_loss=2.5169, LR=0.000100
+[2025-08-25 15:23:57,610][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001812] [Batch 01812/09737] [00:14:29/01:03:21, 0.480s/it]: train_loss_raw=2.4339, running_loss=2.5136, LR=0.000100
+[2025-08-25 15:24:03,398][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001824] [Batch 01824/09737] [00:14:34/01:03:15, 0.480s/it]: train_loss_raw=2.5058, running_loss=2.5141, LR=0.000100
+[2025-08-25 15:24:09,169][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001836] [Batch 01836/09737] [00:14:40/01:03:09, 0.480s/it]: train_loss_raw=2.5104, running_loss=2.5102, LR=0.000100
+[2025-08-25 15:24:14,910][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001848] [Batch 01848/09737] [00:14:46/01:03:04, 0.480s/it]: train_loss_raw=2.4666, running_loss=2.5061, LR=0.000100
+[2025-08-25 15:24:20,759][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001860] [Batch 01860/09737] [00:14:52/01:02:58, 0.480s/it]: train_loss_raw=2.5093, running_loss=2.5047, LR=0.000100
+[2025-08-25 15:24:26,568][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001872] [Batch 01872/09737] [00:14:58/01:02:53, 0.480s/it]: train_loss_raw=2.4694, running_loss=2.5041, LR=0.000100
+[2025-08-25 15:24:32,326][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001884] [Batch 01884/09737] [00:15:03/01:02:47, 0.480s/it]: train_loss_raw=2.4996, running_loss=2.5028, LR=0.000100
+[2025-08-25 15:24:38,113][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001896] [Batch 01896/09737] [00:15:09/01:02:41, 0.480s/it]: train_loss_raw=2.5168, running_loss=2.5010, LR=0.000100
+[2025-08-25 15:24:43,846][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001908] [Batch 01908/09737] [00:15:15/01:02:35, 0.480s/it]: train_loss_raw=2.5838, running_loss=2.5046, LR=0.000100
+[2025-08-25 15:24:49,611][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001920] [Batch 01920/09737] [00:15:21/01:02:30, 0.480s/it]: train_loss_raw=2.4850, running_loss=2.5047, LR=0.000100
+[2025-08-25 15:24:55,379][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001932] [Batch 01932/09737] [00:15:26/01:02:24, 0.480s/it]: train_loss_raw=2.5400, running_loss=2.5028, LR=0.000100
+[2025-08-25 15:25:01,113][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001944] [Batch 01944/09737] [00:15:32/01:02:18, 0.480s/it]: train_loss_raw=2.5280, running_loss=2.5032, LR=0.000100
+[2025-08-25 15:25:06,864][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001956] [Batch 01956/09737] [00:15:38/01:02:12, 0.480s/it]: train_loss_raw=2.5510, running_loss=2.5067, LR=0.000100
+[2025-08-25 15:25:12,647][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001968] [Batch 01968/09737] [00:15:44/01:02:07, 0.480s/it]: train_loss_raw=2.5501, running_loss=2.5053, LR=0.000100
+[2025-08-25 15:25:18,436][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001980] [Batch 01980/09737] [00:15:49/01:02:01, 0.480s/it]: train_loss_raw=2.5649, running_loss=2.5056, LR=0.000100
+[2025-08-25 15:25:24,221][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 001992] [Batch 01992/09737] [00:15:55/01:01:55, 0.480s/it]: train_loss_raw=2.4799, running_loss=2.5046, LR=0.000100
+[2025-08-25 15:25:33,909][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002004] [Batch 02004/09737] [00:16:05/01:02:05, 0.482s/it]: train_loss_raw=2.5458, running_loss=2.5046, LR=0.000100
+[2025-08-25 15:25:39,158][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002016] [Batch 02016/09737] [00:16:10/01:01:57, 0.481s/it]: train_loss_raw=2.4220, running_loss=2.5039, LR=0.000100
+[2025-08-25 15:25:44,390][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002028] [Batch 02028/09737] [00:16:15/01:01:49, 0.481s/it]: train_loss_raw=2.5518, running_loss=2.5014, LR=0.000100
+[2025-08-25 15:25:49,639][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002040] [Batch 02040/09737] [00:16:21/01:01:41, 0.481s/it]: train_loss_raw=2.4438, running_loss=2.5012, LR=0.000100
+[2025-08-25 15:25:55,079][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002052] [Batch 02052/09737] [00:16:26/01:01:34, 0.481s/it]: train_loss_raw=2.5145, running_loss=2.4980, LR=0.000100
+[2025-08-25 15:26:00,923][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002064] [Batch 02064/09737] [00:16:32/01:01:29, 0.481s/it]: train_loss_raw=2.5126, running_loss=2.4977, LR=0.000100
+[2025-08-25 15:26:06,781][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002076] [Batch 02076/09737] [00:16:38/01:01:24, 0.481s/it]: train_loss_raw=2.4397, running_loss=2.4963, LR=0.000100
+[2025-08-25 15:26:12,305][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002088] [Batch 02088/09737] [00:16:43/01:01:17, 0.481s/it]: train_loss_raw=2.5481, running_loss=2.4971, LR=0.000100
+[2025-08-25 15:26:17,745][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002100] [Batch 02100/09737] [00:16:49/01:01:10, 0.481s/it]: train_loss_raw=2.5089, running_loss=2.4964, LR=0.000100
+[2025-08-25 15:26:23,101][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002112] [Batch 02112/09737] [00:16:54/01:01:03, 0.480s/it]: train_loss_raw=2.3740, running_loss=2.4939, LR=0.000100
+[2025-08-25 15:26:28,370][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002124] [Batch 02124/09737] [00:16:59/01:00:55, 0.480s/it]: train_loss_raw=2.4524, running_loss=2.4945, LR=0.000100
+[2025-08-25 15:26:33,928][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002136] [Batch 02136/09737] [00:17:05/01:00:49, 0.480s/it]: train_loss_raw=2.4825, running_loss=2.4933, LR=0.000100
+[2025-08-25 15:26:39,728][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002148] [Batch 02148/09737] [00:17:11/01:00:43, 0.480s/it]: train_loss_raw=2.5628, running_loss=2.4927, LR=0.000100
+[2025-08-25 15:26:45,524][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002160] [Batch 02160/09737] [00:17:17/01:00:37, 0.480s/it]: train_loss_raw=2.4534, running_loss=2.4929, LR=0.000100
+[2025-08-25 15:26:51,308][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002172] [Batch 02172/09737] [00:17:22/01:00:32, 0.480s/it]: train_loss_raw=2.5130, running_loss=2.4915, LR=0.000100
+[2025-08-25 15:26:57,111][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002184] [Batch 02184/09737] [00:17:28/01:00:26, 0.480s/it]: train_loss_raw=2.4631, running_loss=2.4922, LR=0.000100
+[2025-08-25 15:27:02,923][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002196] [Batch 02196/09737] [00:17:34/01:00:20, 0.480s/it]: train_loss_raw=2.4834, running_loss=2.4908, LR=0.000100
+[2025-08-25 15:27:08,541][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002208] [Batch 02208/09737] [00:17:40/01:00:14, 0.480s/it]: train_loss_raw=2.5197, running_loss=2.4896, LR=0.000100
+[2025-08-25 15:27:13,975][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002220] [Batch 02220/09737] [00:17:45/01:00:07, 0.480s/it]: train_loss_raw=2.5515, running_loss=2.4897, LR=0.000100
+[2025-08-25 15:27:19,512][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002232] [Batch 02232/09737] [00:17:51/01:00:01, 0.480s/it]: train_loss_raw=2.5172, running_loss=2.4865, LR=0.000100
+[2025-08-25 15:27:24,789][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002244] [Batch 02244/09737] [00:17:56/00:59:53, 0.480s/it]: train_loss_raw=2.4791, running_loss=2.4876, LR=0.000100
+[2025-08-25 15:27:30,068][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002256] [Batch 02256/09737] [00:18:01/00:59:46, 0.479s/it]: train_loss_raw=2.4682, running_loss=2.4856, LR=0.000100
+[2025-08-25 15:27:35,635][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002268] [Batch 02268/09737] [00:18:07/00:59:40, 0.479s/it]: train_loss_raw=2.5167, running_loss=2.4851, LR=0.000100
+[2025-08-25 15:27:41,390][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002280] [Batch 02280/09737] [00:18:12/00:59:34, 0.479s/it]: train_loss_raw=2.5212, running_loss=2.4856, LR=0.000100
+[2025-08-25 15:27:47,160][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002292] [Batch 02292/09737] [00:18:18/00:59:28, 0.479s/it]: train_loss_raw=2.5311, running_loss=2.4828, LR=0.000100
+[2025-08-25 15:27:52,948][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002304] [Batch 02304/09737] [00:18:24/00:59:23, 0.479s/it]: train_loss_raw=2.5465, running_loss=2.4813, LR=0.000100
+[2025-08-25 15:27:58,625][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002316] [Batch 02316/09737] [00:18:30/00:59:17, 0.479s/it]: train_loss_raw=2.4853, running_loss=2.4820, LR=0.000100
+[2025-08-25 15:28:03,885][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002328] [Batch 02328/09737] [00:18:35/00:59:09, 0.479s/it]: train_loss_raw=2.5566, running_loss=2.4817, LR=0.000100
+[2025-08-25 15:28:09,130][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002340] [Batch 02340/09737] [00:18:40/00:59:02, 0.479s/it]: train_loss_raw=2.4977, running_loss=2.4804, LR=0.000100
+[2025-08-25 15:28:14,688][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002352] [Batch 02352/09737] [00:18:46/00:58:56, 0.479s/it]: train_loss_raw=2.4678, running_loss=2.4782, LR=0.000100
+[2025-08-25 15:28:20,471][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002364] [Batch 02364/09737] [00:18:51/00:58:50, 0.479s/it]: train_loss_raw=2.3751, running_loss=2.4756, LR=0.000100
+[2025-08-25 15:28:26,210][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002376] [Batch 02376/09737] [00:18:57/00:58:44, 0.479s/it]: train_loss_raw=2.4659, running_loss=2.4749, LR=0.000100
+[2025-08-25 15:28:31,962][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002388] [Batch 02388/09737] [00:19:03/00:58:39, 0.479s/it]: train_loss_raw=2.4385, running_loss=2.4763, LR=0.000100
+[2025-08-25 15:28:37,714][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002400] [Batch 02400/09737] [00:19:09/00:58:33, 0.479s/it]: train_loss_raw=2.4819, running_loss=2.4743, LR=0.000100
+[2025-08-25 15:28:43,279][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002412] [Batch 02412/09737] [00:19:14/00:58:27, 0.479s/it]: train_loss_raw=2.3916, running_loss=2.4726, LR=0.000100
+[2025-08-25 15:28:48,923][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002424] [Batch 02424/09737] [00:19:20/00:58:20, 0.479s/it]: train_loss_raw=2.4966, running_loss=2.4732, LR=0.000100
+[2025-08-25 15:28:54,697][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002436] [Batch 02436/09737] [00:19:26/00:58:15, 0.479s/it]: train_loss_raw=2.5176, running_loss=2.4718, LR=0.000100
+[2025-08-25 15:29:00,449][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002448] [Batch 02448/09737] [00:19:31/00:58:09, 0.479s/it]: train_loss_raw=2.4912, running_loss=2.4718, LR=0.000100
+[2025-08-25 15:29:06,188][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002460] [Batch 02460/09737] [00:19:37/00:58:03, 0.479s/it]: train_loss_raw=2.4684, running_loss=2.4721, LR=0.000100
+[2025-08-25 15:29:12,010][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002472] [Batch 02472/09737] [00:19:43/00:57:58, 0.479s/it]: train_loss_raw=2.4672, running_loss=2.4705, LR=0.000100
+[2025-08-25 15:29:17,805][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002484] [Batch 02484/09737] [00:19:49/00:57:52, 0.479s/it]: train_loss_raw=2.4130, running_loss=2.4706, LR=0.000100
+[2025-08-25 15:29:23,378][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002496] [Batch 02496/09737] [00:19:54/00:57:46, 0.479s/it]: train_loss_raw=2.5612, running_loss=2.4731, LR=0.000100
+[rank: 0] Received SIGTERM: 15
+[2025-08-25 15:29:28,761][__main__][INFO] - [TRAIN] [Epoch 00/49 Step 002508] [Batch 02508/09737] [00:20:00/00:57:39, 0.479s/it]: train_loss_raw=2.4733, running_loss=2.4734, LR=0.000100

@@ -1,0 +1,112 @@
+train_path: /data/48/wuqian/Proteometools/part1/parquet/1461_trainValid_split/train.parquet
+#train_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461_trainValid_split/valid.mgf
+valid_path: /data/48/wuqian/Proteometools/part1/parquet/1461_trainValid_split/valid.parquet
+profiler: False
+
+# Logging parameters
+epochs: 30
+num_sanity_val_steps: 10
+console_logging_steps: 50
+tensorboard_logging_steps: 500
+report_to:
+run_name: Shuffle_1461high_TrainValid_split_noLazy
+
+# Model parameters
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+use_flash_attention: False
+conv_peak_encoder: False
+
+# Model data parameters
+n_peaks: 200 # 150
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 10
+precursor_mass_tol: 50 # ppm
+isotope_error_range: [0, 1]
+predict_batch_size: 128
+max_length: 40
+
+# Overwritten when using Aichor
+tb_summarywriter: "/data/48/wuqian/fast/TipsNovo/log"
+
+# Training parameters
+warmup_iters: 480
+max_iters: 3_000_000
+learning_rate: 1e-4
+train_batch_size: 192
+grad_accumulation: 1
+weight_decay: 1e-5
+gradient_clip_val: 10.0
+n_beams: 5
+compile_model: True
+
+device: auto
+n_gpu: 1
+fp16: True
+
+
+# Training data parameters
+train_subset: 1
+#valid_subset_of_train: 0.01
+valid_subset: 1
+val_check_interval: 1.0 # 1.0 This doesn't work
+lazy_loading: False # Use lazy loading mode
+max_shard_size: 1_000_000 # Max data shard size for lazy loading, may influence shuffling mechanics
+preshuffle_shards: False # Perform a preshuffle across shards to ensure shards are homogeneous in lazy mode
+perform_data_checks: True # Check residues, check precursor masses, etc.
+validate_precursor_mass: False # Slow for large datasets
+verbose_loading: True # Verbose SDF logs when loading the dataset
+
+# Checkpointing parameters
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save/
+save_model: True
+save_weights_only: False
+ckpt_interval: 2000
+#train_from_scratch: False
+#resume_checkpoint: /data/48/wuqian/fast/TipsNovo/model_save/1461Raw_high/epoch_28-step_106000.ckpt
+train_from_scratch: True
+resume_checkpoint:
+
+residues:
+  "G": 57.021464
+  "A": 71.037114
+  "S": 87.032028
+  "P": 97.052764
+  "V": 99.068414
+  "T": 101.047670
+  "C": 103.009185
+  "L": 113.084064
+  "I": 113.084064
+  "N": 114.042927
+  "D": 115.026943
+  "Q": 128.058578
+  "K": 128.094963
+  "E": 129.042593
+  "M": 131.040485
+  "H": 137.058912
+  "F": 147.068414
+  "R": 156.101111
+  "Y": 163.063329
+  "W": 186.079313
+  # Modifications
+  "M[UNIMOD:35]": 147.035400 # Oxidation
+  "C[UNIMOD:4]": 160.030649 # Carboxyamidomethylation
+  "N[UNIMOD:7]": 115.026943 # Deamidation
+  "Q[UNIMOD:7]": 129.042594 # Deamidation
+  # Extended modifications
+  # "F(+.98)": 148.052431 # Deamidation
+  # Phospho modifications
+  "S[UNIMOD:21]": 166.998028 # Phosphorylation + 79.966
+  "T[UNIMOD:21]": 181.01367 # Phosphorylation + 79.966
+  "Y[UNIMOD:21]": 243.029329 # Phosphorylation + 79.966
+  # Terminal modifications
+  "[UNIMOD:1]": 42.010565 # Acetylation
+  "[UNIMOD:5]": 43.005814 # Carbamylation
+  "[UNIMOD:385]": -17.026549 # NH3 loss
+  # "(+25.98)": 25.980265 # Carbamylation & NH3 loss

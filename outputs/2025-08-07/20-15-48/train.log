@@ -1,0 +1,44 @@
+[2025-08-07 20:15:48,884][__main__][INFO] - Initializing training.
+[2025-08-07 20:15:48,884][__main__][INFO] - Python version: 3.10.15 | packaged by conda-forge | (main, Oct 16 2024, 01:24:24) [GCC 13.3.0]
+[2025-08-07 20:15:48,884][__main__][INFO] - Torch version: 2.4.1+cu121
+[2025-08-07 20:15:48,884][__main__][INFO] - CUDA version: 12.1
+[2025-08-07 20:15:48,886][__main__][INFO] - Imported hydra config:
+train_path: /data/48/wuqian/fast/TipsNovo/data/tmp/test_128000dup.txt
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+use_flash_attention: false
+conv_peak_encoder: false
+n_peaks: 200
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 10
+precursor_mass_tol: 50
+isotope_error_range:
+- 0
+- 1
+max_length: 40
+tb_summarywriter: /data/48/wuqian/fast/TipsNovo/log
+warmup_iters: 480
+max_iters: 3000000
+learning_rate: 0.001
+train_batch_size: 32
+grad_accumulation: 1
+device: auto
+n_gpu: 1
+fp16: true
+epochs: 1
+num_sanity_val_steps: 10
+console_logging_steps: 50
+tensorboard_logging_steps: 500
+report_to: null
+run_name: instanovo_test
+valid_subset: 1.0
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save
+ckpt_interval: 480
+
+[2025-08-07 20:15:48,890][__main__][INFO] - Starting transformer training

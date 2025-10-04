@@ -1,0 +1,109 @@
+[2025-08-07 20:32:34,830][__main__][INFO] - Initializing training.
+[2025-08-07 20:32:34,830][__main__][INFO] - Python version: 3.10.15 | packaged by conda-forge | (main, Oct 16 2024, 01:24:24) [GCC 13.3.0]
+[2025-08-07 20:32:34,830][__main__][INFO] - Torch version: 2.4.1+cu121
+[2025-08-07 20:32:34,830][__main__][INFO] - CUDA version: 12.1
+[2025-08-07 20:32:34,834][__main__][INFO] - Imported hydra config:
+train_path: /data/48/wuqian/fast/TipsNovo/data/tmp/test_128000dup.mgf
+dim_model: 768
+n_head: 16
+dim_feedforward: 1024
+n_layers: 9
+dropout: 0.1
+use_flash_attention: false
+conv_peak_encoder: false
+n_peaks: 200
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 10
+precursor_mass_tol: 50
+isotope_error_range:
+- 0
+- 1
+predict_batch_size: 32
+train_from_scratch: true
+max_length: 40
+tb_summarywriter: /data/48/wuqian/fast/TipsNovo/log
+warmup_iters: 480
+max_iters: 3000000
+learning_rate: 0.001
+train_batch_size: 32
+grad_accumulation: 1
+device: auto
+n_gpu: 1
+fp16: true
+epochs: 1
+num_sanity_val_steps: 10
+console_logging_steps: 50
+tensorboard_logging_steps: 500
+report_to: null
+run_name: instanovo_test
+valid_subset: 1.0
+model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save
+ckpt_interval: 480
+residues:
+  G: 57.021464
+  A: 71.037114
+  S: 87.032028
+  P: 97.052764
+  V: 99.068414
+  T: 101.04767
+  C: 103.009185
+  L: 113.084064
+  I: 113.084064
+  'N': 114.042927
+  D: 115.026943
+  Q: 128.058578
+  K: 128.094963
+  E: 129.042593
+  M: 131.040485
+  H: 137.058912
+  F: 147.068414
+  R: 156.101111
+  'Y': 163.063329
+  W: 186.079313
+  M[UNIMOD:35]: 147.0354
+  C[UNIMOD:4]: 160.030649
+  N[UNIMOD:7]: 115.026943
+  Q[UNIMOD:7]: 129.042594
+  S[UNIMOD:21]: 166.998028
+  T[UNIMOD:21]: 181.01367
+  Y[UNIMOD:21]: 243.029329
+  '[UNIMOD:1]': 42.010565
+  '[UNIMOD:5]': 43.005814
+  '[UNIMOD:385]': -17.026549
+
+[2025-08-07 20:32:34,837][__main__][INFO] - Starting transformer training
+[2025-08-07 20:32:34,838][__main__][INFO] - Vocab: {0: '[PAD]', 1: '[SOS]', 2: '[EOS]', 3: 'G', 4: 'A', 5: 'S', 6: 'P', 7: 'V', 8: 'T', 9: 'C', 10: 'L', 11: 'I', 12: 'N', 13: 'D', 14: 'Q', 15: 'K', 16: 'E', 17: 'M', 18: 'H', 19: 'F', 20: 'R', 21: 'Y', 22: 'W', 23: 'M[UNIMOD:35]', 24: 'C[UNIMOD:4]', 25: 'N[UNIMOD:7]', 26: 'Q[UNIMOD:7]', 27: 'S[UNIMOD:21]', 28: 'T[UNIMOD:21]', 29: 'Y[UNIMOD:21]', 30: '[UNIMOD:1]', 31: '[UNIMOD:5]', 32: '[UNIMOD:385]'}
+[2025-08-07 20:32:34,838][__main__][INFO] - Loading data
+[2025-08-07 20:32:34,838][instanovo.utils.data_handler][INFO] - Loading file 001 of 001: /data/48/wuqian/fast/TipsNovo/data/tmp/test_128000dup.mgf
+[2025-08-07 20:33:18,043][instanovo.utils.data_handler][INFO] - Saving temporary file to /tmp/tmp76s6eztc/temp_effdbecca8234a2ca2a58d2953236d6e.parquet
+[2025-08-07 20:33:18,210][instanovo.utils.data_handler][INFO] - Saving temporary file to /tmp/tmp76s6eztc/temp_df7bd62dda0d46a7b6c9637aa0362196.parquet
+[2025-08-07 20:33:18,558][instanovo.utils.data_handler][INFO] - Verifying loaded data
+[2025-08-07 20:34:02,413][__main__][INFO] - Validation path not specified, generating from training set.
+[2025-08-07 20:34:04,843][__main__][INFO] - Data splits saved to /data/48/wuqian/fast/TipsNovo/model_save/splits.csv
+[2025-08-07 20:34:04,844][__main__][INFO] - Checking for unknown residues in 128,000 rows.
+[2025-08-07 20:34:04,857][__main__][WARNING] - Unsupported residues found in evaluation set! These rows will be dropped.
+[2025-08-07 20:34:04,857][__main__][INFO] - New residues found: 
+{'N+0.984', 'C+57.021', 'M+15.995'}
+[2025-08-07 20:34:04,857][__main__][INFO] - Residues supported: 
+{'W', '[EOS]', 'R', '[SOS]', 'Q', '[UNIMOD:1]', '[UNIMOD:385]', 'M', 'M[UNIMOD:35]', 'T', 'G', 'S', 'K', 'C[UNIMOD:4]', 'Y', 'S[UNIMOD:21]', '[UNIMOD:5]', 'H', 'V', '[PAD]', 'N[UNIMOD:7]', 'L', 'N', 'D', 'Q[UNIMOD:7]', 'I', 'F', 'Y[UNIMOD:21]', 'P', 'E', 'C', 'A', 'T[UNIMOD:21]'}
+[2025-08-07 20:34:08,249][__main__][WARNING] - 18,000 (18.56%) training rows dropped.
+[2025-08-07 20:34:08,249][__main__][WARNING] - 7,000 (22.58%) validation rows dropped.
+[2025-08-07 20:34:11,430][__main__][INFO] - Data loaded: 79,000 training samples; 24,000 validation samples
+[2025-08-07 20:34:11,437][__main__][INFO] - Checking if any validation set overlaps with training set...
+[2025-08-07 20:34:11,437][__main__][INFO] - No data leakage!
+[2025-08-07 20:34:11,438][__main__][INFO] - Model checkpointing every 0.19 epochs.
+[2025-08-07 20:34:11,438][__main__][INFO] - Updates per epoch: 2,469, step_scale=1.0
+[2025-08-07 20:34:19,664][__main__][INFO] - Sample batch:
+[2025-08-07 20:34:19,664][__main__][INFO] -  - spectra.shape=torch.Size([32, 111, 2])
+[2025-08-07 20:34:19,664][__main__][INFO] -  - precursors.shape=torch.Size([32, 3])
+[2025-08-07 20:34:19,664][__main__][INFO] -  - spectra_mask.shape=torch.Size([32, 111])
+[2025-08-07 20:34:19,664][__main__][INFO] -  - peptides.shape=torch.Size([32, 1])
+[2025-08-07 20:34:19,664][__main__][INFO] -  - peptides_mask.shape=torch.Size([32, 1])
+[2025-08-07 20:34:19,829][__main__][INFO] - Model loaded with 94,619,169 parameters
+[2025-08-07 20:34:19,829][__main__][INFO] - Test forward pass:
+[2025-08-07 20:34:20,286][__main__][INFO] -  - y.shape=torch.Size([32, 2, 33])
+[2025-08-07 20:34:20,706][__main__][INFO] - Sanity checking precursor masses for training set...
+[2025-08-07 20:34:28,551][__main__][INFO] - Sanity checking precursor masses for validation set...

@@ -1,0 +1,15 @@
+#!/home/qwu/anaconda3/envs/instanovo2/bin/python3.10
+# -*- coding: utf-8 -*-
+import re
+import sys
+from instanovo.cli import instanovo_entrypoint
+
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    '''
+    sys.argv[0]
+    $ python show_args.py user_config.json --verbose
+    整个 sys.argv 列表是: ['show_args.py', 'user_config.json', '--verbose']
+    '''
+
+    sys.exit(instanovo_entrypoint()) # 从此出进入主任务

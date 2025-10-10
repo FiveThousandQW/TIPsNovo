@@ -104,6 +104,26 @@ class InstaNovo(nn.Module, Decodable):
             num_layers=n_layers,
         )
 
+        # Non-autoregressive decoder components for peptide tag prediction
+        tag_decoder_layer = nn.TransformerDecoderLayer(
+            d_model=dim_model,
+            nhead=n_head,
+            dim_feedforward=dim_feedforward,
+            batch_first=True,
+            dropout=0 if self.use_flash_attention else dropout,
+        )
+        self.tag_decoder = nn.TransformerDecoder(
+            tag_decoder_layer,
+            num_layers=max(1, n_layers // 3),
+        )
+        self.tag_queries = nn.Parameter(torch.randn(MAX_SEQUENCE_LENGTH, dim_model))
+        self.tag_pos_embed = PositionalEncoding(dim_model, dropout, max_len=MAX_SEQUENCE_LENGTH)
+        self.length_predictor = nn.Sequential(
+            nn.Linear(dim_model, dim_model),
+            nn.ReLU(),
+            nn.Linear(dim_model, MAX_SEQUENCE_LENGTH),
+        )
+
         self.head = nn.Linear(dim_model, self.vocab_size)
         self.charge_encoder = nn.Embedding(max_charge, dim_model)
 
@@ -329,6 +349,57 @@ class InstaNovo(nn.Module, Decodable):
     def get_empty_index(self) -> int:
         """Get the PAD token ID."""
         return int(self.residue_set.PAD_INDEX)
+
+    def init_tag_decoder(
+        self,
+        spectra: Float[Spectrum, " batch"],
+        precursors: Float[PrecursorFeatures, " batch"],
+        spectra_mask: Optional[Bool[SpectrumMask, " batch"]] = None,
+    ) -> Tuple[
+        Tuple[Float[SpectrumEmbedding, " batch"], Bool[SpectrumMask, " batch"] | None],
+        Float[ResidueLogProbabilities, "batch token"],
+    ]:
+        """Initialise encoder states for non-autoregressive tag decoding."""
+
+        if self.use_flash_attention:
+            spectra, _ = self._flash_encoder(spectra, precursors, None)
+            length_logits = self.length_predictor(spectra[:, 0, :])
+            return (spectra, None), torch.log_softmax(length_logits, dim=-1)
+
+        spectra, spectra_mask = self._encoder(spectra, precursors, spectra_mask)
+
+        if spectra_mask is not None:
+            valid = (~spectra_mask).float().unsqueeze(-1)
+            pooled = (spectra * valid).sum(dim=1) / valid.sum(dim=1).clamp(min=1.0)
+        else:
+            pooled = spectra.mean(dim=1)
+
+        length_logits = self.length_predictor(pooled)
+        return (spectra, spectra_mask), torch.log_softmax(length_logits, dim=-1)
+
+    def non_autoregressive_logits(
+        self,
+        spectra: Float[SpectrumEmbedding, " batch"],
+        spectra_mask: Optional[Bool[SpectrumMask, " batch"]],
+        length: int,
+    ) -> Float[ResidueLogits, " batch"]:
+        """Predict logits for a fixed-length peptide tag."""
+
+        if length <= 0:
+            raise ValueError("length must be a positive integer")
+
+        queries = self.tag_queries[:length].unsqueeze(0).expand(spectra.shape[0], -1, -1)
+        queries = self.tag_pos_embed(queries)
+
+        tag_states = self.tag_decoder(
+            queries,
+            spectra,
+            tgt_mask=None,
+            tgt_key_padding_mask=None,
+            memory_key_padding_mask=spectra_mask,
+        )
+
+        return self.head(tag_states)
 
     def decode(self, sequence: Peptide) -> list[str]:
         """Decode a single sequence of AA IDs."""

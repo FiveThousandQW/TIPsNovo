@@ -31,9 +31,9 @@ from ..types import (
     SpectrumEmbedding,
     SpectrumMask,
 )
-from TIPsNovo.utils import ResidueSet
-from TIPsNovo.utils.colorlogging import ColorLog
-from TIPsNovo.utils.file_downloader import download_file
+from ..utils import ResidueSet
+from ..utils.colorlogging import ColorLog
+from ..utils.file_downloader import download_file
 
 MODEL_TYPE = "transformer"
 

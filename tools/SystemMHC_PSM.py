@@ -421,17 +421,30 @@ def pre_process():
     peptide_set = set(df['Peptide_Sequence'].to_list())
     df.write_csv('/data/qwu/data/TIPnovo/systemMHC/Allele_peptide_HLA.csv')
 
-def PTM_Filter():
+def SysteMHC_Filter():
     df = pl.read_csv('/data/qwu/data/TIPnovo/systemMHC/Allele_peptide_HLA.csv')
-    PTM_valueCount = df['Modification_Site'].value_counts()
     df = df.drop_nulls(subset=['Allele_Count'])
     # binder 共有4093W PSM
-    PTM_list = ['','M[147]','P[113]','W[202]','E[111]','Q[111]']
+    # PTM_list = ['','M[147]','P[113]','W[202]','E[111]','Q[111]']
+    PTM_list = ['', 'M[147]']
     df_filtered = df.filter(
         pl.col('Modification_Site').is_in(PTM_list)
     )
     df_filtered.write_csv('/data/qwu/data/TIPnovo/systemMHC/Binder_PTM_filter.csv')
-    # 符合条件 3922W
+    # PSM 5098w
+    tolerance_dic = np.load('/data/qwu/data/TIPnovo/systemMHC/System_analyzer_dic.npy', allow_pickle=True)[()]
+    all_mzML_files_dic = np.load('/data/qwu/data/TIPnovo/systemMHC/all_mzML_files_dic.npy',allow_pickle=True)[()]
+    PSM_file = '/data/qwu/data/TIPnovo/systemMHC/Binder_PTM_filter_train_ALL.csv'
+    df = pl.read_csv(PSM_file)
+    df = df.with_columns(
+        file=pl.col('Spectrum').str.split(by='.').list.get(0) + '.mzML'
+    )
+    df_filtered = df.filter(
+        pl.col('file').is_in(all_mzML_files_dic.keys())
+    )
+    df_filtered = df_filtered.with_columns(
+        mzML_path = pl.col('file').replace(all_mzML_files_dic)
+    )
 
 def Train_valid_test_split():
     df_filtered = pl.read_csv('/data/qwu/data/TIPnovo/systemMHC/Binder_PTM_filter.csv')

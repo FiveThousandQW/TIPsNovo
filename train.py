@@ -377,7 +377,8 @@ class PTModule(L.LightningModule):
             now = datetime.datetime.now()
             timestamp = now.strftime("%Y%m%d_%H%M")
             output_name = f"{self.config['run_name']}{timestamp}_target_pred.csv"
-            df_constructor.write_csv(Path(self.config['model_save_folder_path'])/output_name)
+            out_path = Path(self.config['model_save_folder_path']) / output_name.replace(".csv", ".ndjson")
+            df_constructor.write_ndjson(str(out_path))
 
             assert len(preds) == len(self.validation_groups)
             assert len(targs) == len(self.validation_groups)

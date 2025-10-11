@@ -12,10 +12,6 @@ valid_path:
 profiler: False
 
 
-
-
-
-
 # Logging parameters
 epochs: 5
 num_sanity_val_steps: 10
@@ -82,7 +78,7 @@ model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save/
 save_model: True
 save_weights_only: False
 ckpt_interval: 6000
-train_from_scratch: True
+train_from_scratch: False
 resume_checkpoint: /data/48/wuqian/fast/TipsNovo/model_save/1461Raw_high/epoch_28-step_106000.ckpt
 #train_from_scratch: False
 #resume_checkpoint: /home/qwu/soft/InstaNovo/InstaNovo/instanovo_extended.ckpt

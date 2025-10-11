@@ -4,20 +4,22 @@ train_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/part123_clear.pt
 #train_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/no_traning.pt
 test_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/SystemMHC_valid_6w.pt
 
-train_path: /data/48/wuqian/fast/TipsNovo/data/readyData/SystemMHC_valid_6w.parquet
+train_path: /data/48/wuqian/Proteometools/SystemMHC/dataSet/notrain_SysteMHC_Spect.parquet
 #train_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461_trainValid_split/valid.mgf
-#valid_path: /data/48/wuqian/fast/TipsNovo/data/readyData/SystemMHC_valid_6w.parquet
+valid_path:
+  HLAI: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class1_val_Spect.parquet
+  HLAII: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class2_val_Spect.parquet
 profiler: False
 
 
 
 # Logging parameters
-epochs: 30
+epochs: 5
 num_sanity_val_steps: 10
 console_logging_steps: 50
 tensorboard_logging_steps: 500
 report_to:
-run_name: ProteometoolsAll_pep_312wPSM
+run_name: HLA_Class_I_II_groupedValid
 
 # Model parameters
 dim_model: 768
@@ -47,10 +49,10 @@ tb_summarywriter: "/data/48/wuqian/fast/TipsNovo/log"
 # Training parameters
 warmup_iters: 480
 max_iters: 3_000_000
-learning_rate: 1e-4
+learning_rate: 0.0
 train_batch_size: 156
 grad_accumulation: 1
-weight_decay: 1e-5
+weight_decay: 0.0
 gradient_clip_val: 10.0
 n_beams: 5
 compile_model: True
@@ -77,11 +79,11 @@ model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save/
 save_model: True
 save_weights_only: False
 ckpt_interval: 6000
-#train_from_scratch: True
-#resume_checkpoint: /data/48/wuqian/fast/TipsNovo/model_save/1461Raw_high/epoch_28-step_106000.ckpt
-train_from_scratch: False
+train_from_scratch: True
+resume_checkpoint: /data/48/wuqian/fast/TipsNovo/model_save/1461Raw_high/epoch_28-step_106000.ckpt
+#train_from_scratch: False
 #resume_checkpoint: /home/qwu/soft/InstaNovo/InstaNovo/instanovo_extended.ckpt
-resume_checkpoint:
+#resume_checkpoint:
 
 
 residues:

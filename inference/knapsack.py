@@ -84,11 +84,11 @@ class Knapsack:
 
     @classmethod
     def construct_knapsack(
-        cls,
-        residue_masses: dict[str, float],
-        residue_indices: dict[str, int],
-        max_mass: float,
-        mass_scale: int,
+            cls,
+            residue_masses: dict[str, float],
+            residue_indices: dict[str, int],
+            max_mass: float,
+            mass_scale: int,
     ) -> "Knapsack":
         """Construct a knapsack chart using depth-first search.
 

@@ -20,11 +20,11 @@ class GreedyDecoder(Decoder):
     """
 
     def __init__(
-        self,
-        model: Decodable,
-        suppressed_residues: list[str] | None = None,
-        mass_scale: int = MASS_SCALE,
-        disable_terminal_residues_anywhere: bool = True,
+            self,
+            model: Decodable,
+            suppressed_residues: list[str] | None = None,
+            mass_scale: int = MASS_SCALE,
+            disable_terminal_residues_anywhere: bool = True,
     ):
         super().__init__(model=model)
         self.mass_scale = mass_scale
@@ -67,14 +67,14 @@ class GreedyDecoder(Decoder):
         self.vocab_size = len(self.model.residue_set)
 
     def decode(  # type:ignore
-        self,
-        spectra: Float[Spectrum, " batch"],
-        precursors: Float[PrecursorFeatures, " batch"],
-        max_length: int,
-        mass_tolerance: float = 5e-5,
-        max_isotope: int = 1,
-        min_log_prob: float = -float("inf"),
-        **kwargs,
+            self,
+            spectra: Float[Spectrum, " batch"],
+            precursors: Float[PrecursorFeatures, " batch"],
+            max_length: int,
+            mass_tolerance: float = 5e-5,
+            max_isotope: int = 1,
+            min_log_prob: float = -float("inf"),
+            **kwargs,
     ) -> list[ScoredSequence] | list[list[ScoredSequence]]:
         """Decode predicted residue sequence for a batch of spectra using beam search.
 
@@ -129,7 +129,7 @@ class GreedyDecoder(Decoder):
         self.residue_masses = self.residue_masses.to(spectra.device)  # float32 (vocab_size, )
 
         # ppm equivalent of mass tolerance
-        delta_ppm_tol = mass_tolerance * 10**6  # float (1, )
+        delta_ppm_tol = mass_tolerance * 10 ** 6  # float (1, )
 
         # Residue masses expanded (repeated) across batch_size
         # This is used to quickly compute all possible remaining masses per vocab entry
@@ -173,7 +173,7 @@ class GreedyDecoder(Decoder):
             # This target can shift with isotopes.
             # Mass targets = error_ppm * m_prec * 1e-6
             mass_target_delta = (
-                delta_ppm_tol * precursor_mass.to(torch.float64) * 1e-6
+                    delta_ppm_tol * precursor_mass.to(torch.float64) * 1e-6
             )  # float64 (batch_size, )
 
             # This keeps track of the remaining mass budget for the currently decoding sequence,
@@ -229,23 +229,23 @@ class GreedyDecoder(Decoder):
                 for j in range(0, max_isotope + 1, 1):
                     isotope = CARBON_MASS_DELTA * j  # float
                     remaining_lesser_isotope = (
-                        remaining_mass_incomplete - isotope < mass_target_incomplete
+                            remaining_mass_incomplete - isotope < mass_target_incomplete
                     )  # bool (sub_batch_size, )
                     remaining_greater_isotope = (
-                        remaining_mass_incomplete - isotope > -mass_target_incomplete
+                            remaining_mass_incomplete - isotope > -mass_target_incomplete
                     )  # bool (sub_batch_size, )
 
                     # remaining mass is within the target tolerance
                     remaining_within_range = (
-                        remaining_lesser_isotope & remaining_greater_isotope
+                            remaining_lesser_isotope & remaining_greater_isotope
                     )  # bool (sub_batch_size, )
                     remaining_meets_precursor = (
-                        remaining_meets_precursor | remaining_within_range
+                            remaining_meets_precursor | remaining_within_range
                     )  # bool (sub_batch_size, )
                     if remaining_within_range.any() and j > 0:
                         # If we did hit an isotope, correct the remaining mass accordingly
                         remaining_mass_incomplete[remaining_within_range] = (
-                            remaining_mass_incomplete[remaining_within_range] - isotope
+                                remaining_mass_incomplete[remaining_within_range] - isotope
                         )
 
                 # Step 4.2: Check which residues are valid
@@ -261,22 +261,22 @@ class GreedyDecoder(Decoder):
                 ]  # float64 (sub_batch_size, vocab_size)
 
                 valid_mass = (
-                    remaining_mass_incomplete_expanded - residue_mass_delta_incomplete
-                    > -mass_target_incomplete_expanded
+                        remaining_mass_incomplete_expanded - residue_mass_delta_incomplete
+                        > -mass_target_incomplete_expanded
                 )  # bool (sub_batch_size, vocab_size)
                 # Check all isotopes for valid masses
                 for j in range(1, max_isotope + 1, 1):
                     isotope = CARBON_MASS_DELTA * j  # float
                     mass_lesser_isotope = (
-                        remaining_mass_incomplete_expanded - residue_mass_delta_incomplete
-                        < mass_target_incomplete_expanded + isotope
+                            remaining_mass_incomplete_expanded - residue_mass_delta_incomplete
+                            < mass_target_incomplete_expanded + isotope
                     )  # bool (sub_batch_size, vocab_size)
                     mass_greater_isotope = (
-                        remaining_mass_incomplete_expanded - residue_mass_delta_incomplete
-                        > -mass_target_incomplete_expanded + isotope
+                            remaining_mass_incomplete_expanded - residue_mass_delta_incomplete
+                            > -mass_target_incomplete_expanded + isotope
                     )  # bool (sub_batch_size, vocab_size)
                     valid_mass = valid_mass | (
-                        mass_lesser_isotope & mass_greater_isotope
+                            mass_lesser_isotope & mass_greater_isotope
                     )  # bool (sub_batch_size, vocab_size)
 
                 # Filtered probabilities:
@@ -307,19 +307,19 @@ class GreedyDecoder(Decoder):
                     ) - CARBON_MASS_DELTA * (torch.arange(max_isotope + 1, device=device))
                     # Expand with terminal residues and subtract
                     remaining_mass_incomplete_isotope_delta = (
-                        remaining_mass_incomplete_isotope[:, :, None].expand(
-                            sub_batch_size,
-                            max_isotope + 1,
-                            self.terminal_residue_indices.shape[0],
-                        )
-                        - self.residue_masses[self.terminal_residue_indices]
+                            remaining_mass_incomplete_isotope[:, :, None].expand(
+                                sub_batch_size,
+                                max_isotope + 1,
+                                self.terminal_residue_indices.shape[0],
+                            )
+                            - self.residue_masses[self.terminal_residue_indices]
                     )
 
                     # If within target delta, allow these residues to be predicted,
                     # otherwise set probability to -inf
                     allow_terminal = (
-                        remaining_mass_incomplete_isotope_delta.abs()
-                        < mass_target_incomplete[:, None, None]
+                            remaining_mass_incomplete_isotope_delta.abs()
+                            < mass_target_incomplete[:, None, None]
                     ).any(dim=1)
                     allow_terminal_full = torch.ones(
                         (sub_batch_size, self.vocab_size),

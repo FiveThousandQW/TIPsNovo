@@ -15,9 +15,9 @@ class KnapsackBeamSearchDecoder(BeamSearchDecoder):
     """Class for decoding from de novo sequencing models using beam search & knapsack filtering."""
 
     def __init__(
-        self,
-        model: Decodable,
-        knapsack: Knapsack,
+            self,
+            model: Decodable,
+            knapsack: Knapsack,
     ):
         super().__init__(model=model, mass_scale=knapsack.mass_scale)
         self.knapsack = knapsack
@@ -39,12 +39,12 @@ class KnapsackBeamSearchDecoder(BeamSearchDecoder):
         return cls(model=model, knapsack=knapsack)
 
     def prefilter_items(
-        self,
-        log_probabilities: Float[ResidueLogProbabilities, "batch beam residue"],
-        remaining_masses: Integer[DiscretizedMass, "batch beam residue"],
-        beam_masses: Integer[DiscretizedMass, "batch beam"],
-        mass_buffer: Integer[DiscretizedMass, "batch 1 1"],
-        max_isotope: int,
+            self,
+            log_probabilities: Float[ResidueLogProbabilities, "batch beam residue"],
+            remaining_masses: Integer[DiscretizedMass, "batch beam residue"],
+            beam_masses: Integer[DiscretizedMass, "batch beam"],
+            mass_buffer: Integer[DiscretizedMass, "batch 1 1"],
+            max_isotope: int,
     ) -> Float[ResidueLogProbabilities, "batch beam residue"]:
         """Filter illegal next token by setting the corresponding log probabilities to `-inf`.
 
@@ -80,13 +80,13 @@ class KnapsackBeamSearchDecoder(BeamSearchDecoder):
                 for residue in range(num_residues):
                     if log_probabilities[batch, beam, residue].isfinite().item():
                         valid_residue = self.chart[
-                            beam_lower_bound : (beam_upper_bound + 1), residue
+                            beam_lower_bound: (beam_upper_bound + 1), residue
                         ].any()
                         if max_isotope > 0:
                             for num_nucleons in range(1, max_isotope + 1):
                                 local_valid_residue = self.chart[
-                                    beam_lower_bound - num_nucleons * scaled_nucleon_mass : (
-                                        beam_upper_bound - num_nucleons * scaled_nucleon_mass + 1
+                                    beam_lower_bound - num_nucleons * scaled_nucleon_mass: (
+                                            beam_upper_bound - num_nucleons * scaled_nucleon_mass + 1
                                     ),
                                     residue,
                                 ].any()
@@ -98,28 +98,28 @@ class KnapsackBeamSearchDecoder(BeamSearchDecoder):
         return log_probabilities
 
     def _get_isotope_chart(
-        self,
-        beam_lower_bound: int,
-        beam_upper_bound: int,
-        scaled_nucleon_mass: int,
-        num_nucleons: int,
+            self,
+            beam_lower_bound: int,
+            beam_upper_bound: int,
+            scaled_nucleon_mass: int,
+            num_nucleons: int,
     ) -> Float[numpy.ndarray, "mass residue"]:
         return self.chart[
-            (beam_lower_bound - num_nucleons * scaled_nucleon_mass) : (
-                beam_upper_bound - num_nucleons * scaled_nucleon_mass + 1
+            (beam_lower_bound - num_nucleons * scaled_nucleon_mass): (
+                    beam_upper_bound - num_nucleons * scaled_nucleon_mass + 1
             )
         ].any(0)
 
     def _init_prefilter(
-        self,
-        precursor_masses: Integer[DiscretizedMass, " batch"],
-        log_probabilities: Float[ResidueLogProbabilities, "batch beam"],
-        mass_buffer: Integer[DiscretizedMass, " batch"],
+            self,
+            precursor_masses: Integer[DiscretizedMass, " batch"],
+            log_probabilities: Float[ResidueLogProbabilities, "batch beam"],
+            mass_buffer: Integer[DiscretizedMass, " batch"],
     ) -> Float[ResidueLogProbabilities, "batch beam"]:
         mass_lower_bound = torch.clamp(precursor_masses - mass_buffer, min=0)
         mass_upper_bound = precursor_masses + mass_buffer
         for batch, (lower_bound, upper_bound) in enumerate(
-            zip(mass_lower_bound, mass_upper_bound, strict=True)
+                zip(mass_lower_bound, mass_upper_bound, strict=True)
         ):
             valid_residues = self.chart[lower_bound:upper_bound].any(0)
             log_probabilities[batch, ~valid_residues] = -float("inf")

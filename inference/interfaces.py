@@ -1,9 +1,12 @@
 from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Any
+
 import torch
 from jaxtyping import Float, Integer
+
 from ..types import Peptide, PrecursorFeatures, Spectrum
 from ..utils.residues import ResidueSet
 
@@ -32,11 +35,11 @@ class Decodable(metaclass=ABCMeta):
 
     @abstractmethod
     def init(  # type:ignore
-        self,
-        spectra: Float[Spectrum, " batch"],
-        precursors: Float[PrecursorFeatures, " batch"],
-        *args,
-        **kwargs,
+            self,
+            spectra: Float[Spectrum, " batch"],
+            precursors: Float[PrecursorFeatures, " batch"],
+            *args,
+            **kwargs,
     ) -> Any:
         """Initialize the search state.
 
@@ -51,11 +54,11 @@ class Decodable(metaclass=ABCMeta):
 
     @abstractmethod
     def score_candidates(  # type:ignore
-        self,
-        sequences: Integer[Peptide, "..."],
-        precursor_mass_charge: Float[PrecursorFeatures, "..."],
-        *args,
-        **kwargs,
+            self,
+            sequences: Integer[Peptide, "..."],
+            precursor_mass_charge: Float[PrecursorFeatures, "..."],
+            *args,
+            **kwargs,
     ) -> torch.FloatTensor:
         """Generate and score the next set of candidates.
 
@@ -121,11 +124,11 @@ class Decoder(metaclass=ABCMeta):
 
     @abstractmethod
     def decode(  # type:ignore
-        self,
-        spectra: Float[Spectrum, "..."],
-        precursors: Float[PrecursorFeatures, "..."],
-        *args,
-        **kwargs,
+            self,
+            spectra: Float[Spectrum, "..."],
+            precursors: Float[PrecursorFeatures, "..."],
+            *args,
+            **kwargs,
     ) -> list[ScoredSequence] | list[list[ScoredSequence]]:
         """Generate the predicted residue sequence using the decoder's search algorithm.
 

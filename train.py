@@ -376,6 +376,7 @@ class PTModule(L.LightningModule):
             targs_list = self.valid_targets
             num_groups = len(self.validation_groups)
 
+
             # 计算是否出现了“每个rank都各自产生了一份按组结果”的情况
             # 注意：不用强依赖 world_size，直接用长度关系判断更稳健
             if num_groups > 0 and len(preds_list) % num_groups == 0 and len(preds_list) != num_groups:

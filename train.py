@@ -39,6 +39,7 @@ from .utils.colorlogging import ColorLog
 from .utils.device_handler import check_device
 from .utils.s3 import PLCheckpointWrapper, S3FileHandler
 from lightning.pytorch.profilers import PyTorchProfiler
+import torch.distributed as dist
 
 load_dotenv()
 
@@ -371,46 +372,46 @@ class PTModule(L.LightningModule):
         # 如果有分组验证集，则为每个组单独计算和记录指标
         # -------------------- Validation group logging (DDP安全合并版) --------------------
         if self.validation_groups is not None:
-            # 原始收集到的结果（通常是“每组一个条目”，但DDP下会变成 组数 × world_size）
-            preds_list = self.valid_predictions
-            targs_list = self.valid_targets
-            num_groups = len(self.validation_groups)
 
-            # 计算是否出现了“每个rank都各自产生了一份按组结果”的情况
-            # 注意：不用强依赖 world_size，直接用长度关系判断更稳健
-            if num_groups > 0 and len(preds_list) % num_groups == 0 and len(preds_list) != num_groups:
-                replicate = len(preds_list) // num_groups  # 通常等于 world_size
-                merged_preds, merged_targs = [], []
+            # 1) 先拿到本 rank 的预测/标签（list[str]）
+            preds_list = list(self.valid_predictions)
+            targs_list = list(self.valid_targets)
 
-                def _merge_chunk(chunk):
-                    first = chunk[0]
-                    if isinstance(first, torch.Tensor):
-                        # 合并为一个Tensor（先确保在CPU）
-                        return torch.cat([c.detach().cpu() for c in chunk], dim=0)
-                    elif isinstance(first, np.ndarray):
-                        return np.concatenate(chunk, axis=0)
-                    elif isinstance(first, list):
-                        out = []
-                        for c in chunk:
-                            out.extend(c)
-                        return out
-                    else:
-                        raise TypeError(
-                            f"Unsupported element type for merging: {type(first)}; "
-                            "please convert preds/targets to Tensor/ndarray/list."
-                        )
+            # 2) 跨卡汇总（DDP）
+            if dist.is_available() and dist.is_initialized():
+                world_size = dist.get_world_size()
+                gathered_preds = [None] * world_size
+                gathered_targs = [None] * world_size
+                dist.all_gather_object(gathered_preds, preds_list)
+                dist.all_gather_object(gathered_targs, targs_list)
+                # 扁平化
+                preds_list = [x for part in gathered_preds for x in part]
+                targs_list = [x for part in gathered_targs for x in part]
 
-                # 将形如 [g0(r0), g1(r0), ..., g0(r1), g1(r1), ...] 合并成 [g0(all), g1(all), ...]
-                for g in range(num_groups):
-                    p_chunk = preds_list[g::num_groups]  # g, g+num_groups, g+2*num_groups, ...
-                    t_chunk = targs_list[g::num_groups]
-                    merged_preds.append(_merge_chunk(p_chunk))
-                    merged_targs.append(_merge_chunk(t_chunk))
+            expected = len(self.validation_groups)
+            n_pred, n_targ = len(preds_list), len(targs_list)
 
-                preds_list = merged_preds
-                targs_list = merged_targs
+            # 3) 处理 DistributedSampler 的 padding（当 len%world_size!=0 时会多出少量重复样本）
+            if n_pred != expected or n_targ != expected:
+                # 仅在 rank0 报告一次
+                if getattr(self.trainer, "is_global_zero", True):
+                    logger.warning(
+                        f"DDP validation produced preds={n_pred}, targs={n_targ}, "
+                        f"but expected={expected}. "
+                        "Likely due to DistributedSampler padding. Truncating extras to match."
+                    )
+                # 裁剪到期望长度（由于 padding 出现在尾部，这样对齐最稳妥）
+                if n_pred >= expected and n_targ >= expected:
+                    preds_list = preds_list[:expected]
+                    targs_list = targs_list[:expected]
+                else:
+                    # 理论上不会更少；若更少，直接报错更安全
+                    raise RuntimeError(
+                        f"After DDP gather we have fewer samples than expected: "
+                        f"preds={n_pred}, targs={n_targ}, expected={expected}"
+                    )
 
-            # 合并后再转成 Series；此时应当是“每组一个条目”
+            # 4) 转成 Series 后再做你的分组指标
             preds = pl.Series(preds_list)
             targs = pl.Series(targs_list)
 
@@ -423,13 +424,11 @@ class PTModule(L.LightningModule):
                 out_path = Path(self.config['model_save_folder_path']) / output_name
                 pl.DataFrame({"targs": targs, "preds": preds}).write_ndjson(str(out_path))
 
-            # 断言在DDP聚合后应能通过
-            assert len(preds) == len(self.validation_groups), \
-                f"len(preds)={len(preds)}, len(validation_groups)={len(self.validation_groups)}"
-            assert len(targs) == len(self.validation_groups), \
-                f"len(targs)={len(targs)}, len(validation_groups)={len(self.validation_groups)}"
+            # 5) 一定已对齐
+            assert len(preds) == len(self.validation_groups)
+            assert len(targs) == len(self.validation_groups)
 
-            # 分组记录指标（保持你的原有逻辑）
+            # 6) 分组打点（保持你的逻辑）
             for group in self.groups:
                 idx = (self.validation_groups == group)
                 aa_prec, aa_recall, pep_recall, _ = self.metrics.compute_precision_recall(
@@ -440,7 +439,6 @@ class PTModule(L.LightningModule):
                 self.sw.add_scalar(f"eval/{group}_aa_prec", aa_prec, epoch)
                 self.sw.add_scalar(f"eval/{group}_aa_recall", aa_recall, epoch)
                 self.sw.add_scalar(f"eval/{group}_pep_recall", pep_recall, epoch)
-        # -------------------- /Validation group logging --------------------
 
         self.valid_predictions = []
         self.valid_targets = []

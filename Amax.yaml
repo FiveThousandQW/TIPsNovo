@@ -18,7 +18,7 @@ num_sanity_val_steps: 10
 console_logging_steps: 50
 tensorboard_logging_steps: 500
 report_to:
-run_name: HLA_Class_I_II_groupedValid
+run_name: HLA_Class_I_II_groupedValid_2100
 
 # Model parameters
 dim_model: 768

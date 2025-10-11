@@ -122,6 +122,7 @@ residues:
   # Q[111] 是N端谷氨酰胺脱氨形成焦谷氨酸
   "Q[111]": 111.032029 # Gln->pyro-Glu - 17.027
 
+
   # Initial
   # Modifications
 #  "M[UNIMOD:35]": 147.035400 # Oxidation

@@ -367,24 +367,71 @@ class PTModule(L.LightningModule):
                 f"{metric:11s}{val:.3f}"
             )
 
-
         # Validation group logging
         # 如果有分组验证集，则为每个组单独计算和记录指标
+        # -------------------- Validation group logging (DDP安全合并版) --------------------
         if self.validation_groups is not None:
-            preds = pl.Series(self.valid_predictions)
-            targs = pl.Series(self.valid_targets)
-            df_constructor = pl.DataFrame({'targs':targs, 'preds': preds})
-            now = datetime.datetime.now()
-            timestamp = now.strftime("%Y%m%d_%H%M")
-            output_name = f"{self.config['run_name']}{timestamp}_target_pred.csv"
-            out_path = Path(self.config['model_save_folder_path']) / output_name.replace(".csv", ".ndjson")
-            df_constructor.write_ndjson(str(out_path))
+            # 原始收集到的结果（通常是“每组一个条目”，但DDP下会变成 组数 × world_size）
+            preds_list = self.valid_predictions
+            targs_list = self.valid_targets
+            num_groups = len(self.validation_groups)
 
-            assert len(preds) == len(self.validation_groups)
-            assert len(targs) == len(self.validation_groups)
+            # 计算是否出现了“每个rank都各自产生了一份按组结果”的情况
+            # 注意：不用强依赖 world_size，直接用长度关系判断更稳健
+            if num_groups > 0 and len(preds_list) % num_groups == 0 and len(preds_list) != num_groups:
+                replicate = len(preds_list) // num_groups  # 通常等于 world_size
+                merged_preds, merged_targs = [], []
 
+                def _merge_chunk(chunk):
+                    first = chunk[0]
+                    if isinstance(first, torch.Tensor):
+                        # 合并为一个Tensor（先确保在CPU）
+                        return torch.cat([c.detach().cpu() for c in chunk], dim=0)
+                    elif isinstance(first, np.ndarray):
+                        return np.concatenate(chunk, axis=0)
+                    elif isinstance(first, list):
+                        out = []
+                        for c in chunk:
+                            out.extend(c)
+                        return out
+                    else:
+                        raise TypeError(
+                            f"Unsupported element type for merging: {type(first)}; "
+                            "please convert preds/targets to Tensor/ndarray/list."
+                        )
+
+                # 将形如 [g0(r0), g1(r0), ..., g0(r1), g1(r1), ...] 合并成 [g0(all), g1(all), ...]
+                for g in range(num_groups):
+                    p_chunk = preds_list[g::num_groups]  # g, g+num_groups, g+2*num_groups, ...
+                    t_chunk = targs_list[g::num_groups]
+                    merged_preds.append(_merge_chunk(p_chunk))
+                    merged_targs.append(_merge_chunk(t_chunk))
+
+                preds_list = merged_preds
+                targs_list = merged_targs
+
+            # 合并后再转成 Series；此时应当是“每组一个条目”
+            preds = pl.Series(preds_list)
+            targs = pl.Series(targs_list)
+
+            # 只在 rank0 写文件，避免多副本
+            is_global_zero = getattr(self.trainer, "is_global_zero", True)
+            if is_global_zero:
+                now = datetime.datetime.now()
+                timestamp = now.strftime("%Y%m%d_%H%M")
+                output_name = f"{self.config['run_name']}{timestamp}_target_pred.ndjson"
+                out_path = Path(self.config['model_save_folder_path']) / output_name
+                pl.DataFrame({"targs": targs, "preds": preds}).write_ndjson(str(out_path))
+
+            # 断言在DDP聚合后应能通过
+            assert len(preds) == len(self.validation_groups), \
+                f"len(preds)={len(preds)}, len(validation_groups)={len(self.validation_groups)}"
+            assert len(targs) == len(self.validation_groups), \
+                f"len(targs)={len(targs)}, len(validation_groups)={len(self.validation_groups)}"
+
+            # 分组记录指标（保持你的原有逻辑）
             for group in self.groups:
-                idx = self.validation_groups == group
+                idx = (self.validation_groups == group)
                 aa_prec, aa_recall, pep_recall, _ = self.metrics.compute_precision_recall(
                     targs.filter(idx), preds.filter(idx)
                 )
@@ -393,6 +440,7 @@ class PTModule(L.LightningModule):
                 self.sw.add_scalar(f"eval/{group}_aa_prec", aa_prec, epoch)
                 self.sw.add_scalar(f"eval/{group}_aa_recall", aa_recall, epoch)
                 self.sw.add_scalar(f"eval/{group}_pep_recall", pep_recall, epoch)
+        # -------------------- /Validation group logging --------------------
 
         self.valid_predictions = []
         self.valid_targets = []
@@ -934,10 +982,13 @@ def train(
     # 初始化优化器 (Adam) 和自定义的学习率调度器 (WarmupScheduler)
     # Use as an additional data sanity check
     if config.get("validate_precursor_mass", True):
-        logger.info("Sanity checking precursor masses for training set...")
-        train_sdf.validate_precursor_mass(metrics)
-        logger.info("Sanity checking precursor masses for validation set...")
-        valid_sdf.validate_precursor_mass(metrics)
+        if not config.get("use_readyData", False):
+            logger.info("Sanity checking precursor masses for training set...")
+            train_sdf.validate_precursor_mass(metrics)
+            logger.info("Sanity checking precursor masses for validation set...")
+            valid_sdf.validate_precursor_mass(metrics)
+        else:
+            logger.info("Skipping precursor mass sanity check because use_readyData=True.")
 
     # init optim
     # 初始化优化器 (Adam) 和自定义的学习率调度器 (WarmupScheduler)

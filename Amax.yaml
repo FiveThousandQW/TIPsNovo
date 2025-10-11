@@ -64,7 +64,8 @@ fp16: True
 # Training data parameters
 train_subset: 1
 #valid_subset_of_train: 0.01
-valid_subset: 1
+valid_subset: 0.1
+
 val_check_interval: 1.0 # 1.0 This doesn't work
 lazy_loading: False # Use lazy loading mode
 max_shard_size: 1_000_000 # Max data shard size for lazy loading, may influence shuffling mechanics
@@ -79,7 +80,7 @@ save_model: True
 save_weights_only: False
 ckpt_interval: 6000
 train_from_scratch: False
-resume_checkpoint: /data/48/wuqian/fast/TipsNovo/model_save/1461Raw_high/epoch_28-step_106000.ckpt
+resume_checkpoint: /data/48/wuqian/fast/TipsNovo/model_save/Finetune_SystemMHC.ckpt
 #train_from_scratch: False
 #resume_checkpoint: /home/qwu/soft/InstaNovo/InstaNovo/instanovo_extended.ckpt
 #resume_checkpoint:
@@ -110,16 +111,16 @@ residues:
   "M[147]": 147.035400 # Oxidation + 15.995
 
   # P[113] 是脯氨酸氧化（羟基化）
-  #"P[113]": 113.047679 # Oxidation + 15.995
+  "P[113]": 113.047679 # Oxidation + 15.995
 
   # W[202] 是色氨酸氧化（羟基化）
-  #"W[202]": 202.074228 # Oxidation + 15.995
+  "W[202]": 202.074228 # Oxidation + 15.995
 
   # E[111] 是N端谷氨酸脱水形成焦谷氨酸
-  #"E[111]": 111.032028 # Glu->pyro-Glu - 18.011
+  "E[111]": 111.032028 # Glu->pyro-Glu - 18.011
 
   # Q[111] 是N端谷氨酰胺脱氨形成焦谷氨酸
-  #"Q[111]": 111.032029 # Gln->pyro-Glu - 17.027
+  "Q[111]": 111.032029 # Gln->pyro-Glu - 17.027
 
 
   # Initial

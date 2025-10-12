@@ -4,7 +4,7 @@ train_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/part123_clear.pt
 #train_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/no_traning.pt
 test_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/SystemMHC_valid_6w.pt
 
-train_path: /data/48/wuqian/Proteometools/SystemMHC/dataSet/notrain_SysteMHC_Spect.parquet
+train_path: /data/48/wuqian/Proteometools/allPart/spectrum/part123_clear.parquet
 #train_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461_trainValid_split/valid.mgf
 valid_path:
   HLAI: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class1_val_Spect.parquet
@@ -13,12 +13,12 @@ profiler: False
 
 
 # Logging parameters
-epochs: 5
+epochs: 30
 num_sanity_val_steps: 10
 console_logging_steps: 50
 tensorboard_logging_steps: 500
 report_to:
-run_name: HLA_Class_I_II_groupedValid_2100
+run_name: HLA_Class_I_II_groupedValid_trainTest
 
 # Model parameters
 dim_model: 768
@@ -48,10 +48,10 @@ tb_summarywriter: "/data/48/wuqian/fast/TipsNovo/log"
 # Training parameters
 warmup_iters: 480
 max_iters: 3_000_000
-learning_rate: 0.0
+learning_rate: 1e-4
 train_batch_size: 156
 grad_accumulation: 1
-weight_decay: 0.0
+weight_decay: 1e-5
 gradient_clip_val: 10.0
 n_beams: 5
 compile_model: True
@@ -64,8 +64,7 @@ fp16: True
 # Training data parameters
 train_subset: 1
 #valid_subset_of_train: 0.01
-valid_subset: 0.1
-
+valid_subset: 1
 val_check_interval: 1.0 # 1.0 This doesn't work
 lazy_loading: False # Use lazy loading mode
 max_shard_size: 1_000_000 # Max data shard size for lazy loading, may influence shuffling mechanics
@@ -74,16 +73,17 @@ perform_data_checks: True # Check residues, check precursor masses, etc.
 validate_precursor_mass: False # Slow for large datasets
 verbose_loading: True # Verbose SDF logs when loading the dataset
 
+
 # Checkpointing parameters
 model_save_folder_path: /data/48/wuqian/fast/TipsNovo/model_save/
 save_model: True
 save_weights_only: False
 ckpt_interval: 6000
-train_from_scratch: False
-resume_checkpoint: /data/48/wuqian/fast/TipsNovo/model_save/Finetune_SystemMHC.ckpt
 #train_from_scratch: False
+#resume_checkpoint: /data/48/wuqian/fast/TipsNovo/model_save/Finetune_SystemMHC.ckpt
 #resume_checkpoint: /home/qwu/soft/InstaNovo/InstaNovo/instanovo_extended.ckpt
-#resume_checkpoint:
+train_from_scratch: True
+resume_checkpoint:
 
 
 residues:
@@ -111,16 +111,16 @@ residues:
   "M[147]": 147.035400 # Oxidation + 15.995
 
   # P[113] 是脯氨酸氧化（羟基化）
-  "P[113]": 113.047679 # Oxidation + 15.995
+#  "P[113]": 113.047679 # Oxidation + 15.995
 
   # W[202] 是色氨酸氧化（羟基化）
-  "W[202]": 202.074228 # Oxidation + 15.995
+#  "W[202]": 202.074228 # Oxidation + 15.995
 
   # E[111] 是N端谷氨酸脱水形成焦谷氨酸
-  "E[111]": 111.032028 # Glu->pyro-Glu - 18.011
+#  "E[111]": 111.032028 # Glu->pyro-Glu - 18.011
 
   # Q[111] 是N端谷氨酰胺脱氨形成焦谷氨酸
-  "Q[111]": 111.032029 # Gln->pyro-Glu - 17.027
+#  "Q[111]": 111.032029 # Gln->pyro-Glu - 17.027
 
 
   # Initial

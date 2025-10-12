@@ -7,6 +7,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Tuple, cast
 import hydra
+from datetime import timedelta
 import lightning as L
 import neptune # 实验跟踪工具
 import numpy as np
@@ -1068,7 +1069,7 @@ def train(
                     every_n_train_steps=config["ckpt_interval"],
                     s3_ckpt_path=s3_ckpt_path,
                     s3=s3,
-                    strategy=strategy,
+                    strategy=strategy
                 )
             ]
         else:
@@ -1102,6 +1103,7 @@ def train(
         enable_progress_bar=False,
         strategy=strategy,
         val_check_interval=config["val_check_interval"],
+
     )
 
     # Train the model.
@@ -1132,7 +1134,7 @@ def _get_strategy() -> DDPStrategy | str:
     """
     # 检查可用的 CUDA (NVIDIA GPU) 设备数量是否大于 1
     if torch.cuda.device_count() > 1:
-        return DDPStrategy(find_unused_parameters=False, static_graph=True)
+        return DDPStrategy(find_unused_parameters=False, static_graph=True,timeout=timedelta(hours=16))
 
     return "auto"
 

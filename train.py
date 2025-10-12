@@ -633,7 +633,6 @@ def train(
             ).to_csv(str(split_path), index=False)
             logger.info(f"Data splits saved to {split_path}")
 
-
         # Check residues
         # 执行数据完整性检查
         if config.get("perform_data_checks", True):
@@ -824,16 +823,24 @@ def train(
         num_workers=8,  # <-- 现在可以安全地使用多个 worker 了！
         shuffle=True,  # <-- DataLoader 可以安全地对列表进行 shuffle
         collate_fn=collate_batch,
-        pin_memory=True  # 建议开启，可以加速数据到 GPU 的传输
+        pin_memory=True,  # 建议开启，可以加速数据到 GPU 的传输
+        persistent_workers = True,
+        pin_memory_device="cuda",
+        prefetch_factor=4,
+        drop_last=True
     )
 
     valid_dl = DataLoader(
         valid_cache,  # <-- 直接传入列表！
         batch_size=config["predict_batch_size"],
-        num_workers=8,
+        num_workers=4,
         shuffle=False,
         collate_fn=collate_batch,
-        pin_memory=True
+        pin_memory=True,
+        persistent_workers=True,
+        pin_memory_device="cuda",
+        prefetch_factor=2,
+        drop_last=True
     )
     # 将 Dataset 封装成 DataLoader，用于高效地进行数据批处理
     # train_dl = DataLoader(

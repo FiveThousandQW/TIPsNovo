@@ -1,15 +1,17 @@
-use_readyData: False
-save_readyData: False
-train_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/part123_clear.pt
-#train_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/no_traning.pt
-test_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/SystemMHC_valid_6w.pt
+#use_readyData: False
+#save_readyData: False
+#train_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/part123_clear.pt
+##train_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/no_traning.pt
+#test_readyData : /data/48/wuqian/fast/TipsNovo/data/readyData/SystemMHC_valid_6w.pt
+#train_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461_trainValid_split/valid.mgf
+
 
 train_path: /data/48/wuqian/Proteometools/allPart/spectrum/part123_clear.parquet
-#train_path: /data/48/wuqian/Proteometools/part1/anno_mgf/1461_trainValid_split/valid.mgf
 valid_path:
   HLAI: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class1_val_Spect.parquet
   HLAII: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class2_val_Spect.parquet
 profiler: False
+
 
 
 # Logging parameters

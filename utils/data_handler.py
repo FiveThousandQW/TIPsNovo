@@ -32,7 +32,7 @@ from ..constants import (
 )
 
 if TYPE_CHECKING:
-    from instanovo.utils import Metrics
+    from ..utils import Metrics
 from ..__init__ import console
 from ..utils.colorlogging import ColorLog
 from ..utils.msreader import read_mzml, read_mzxml

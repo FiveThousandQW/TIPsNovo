@@ -12,11 +12,16 @@ valid_path:
   HLAII: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class2_val_Spect.parquet
 profiler: False
 
+#train_path: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class1_val_Spect.parquet
+#valid_path: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class2_val_Spect.parquet
+#  HLAI: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class1_val_Spect.parquet
+#  HLAII: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class2_val_Spect.parquet
+#profiler: False
 
 
 # Logging parameters
 epochs: 30
-num_sanity_val_steps: 10
+num_sanity_val_steps: 0
 console_logging_steps: 50
 tensorboard_logging_steps: 500
 report_to:
@@ -49,9 +54,8 @@ tb_summarywriter: "/data/48/wuqian/fast/TipsNovo/log"
 
 # Training parameters
 warmup_iters: 480
-max_iters: 3_000_000
 learning_rate: 1e-4
-train_batch_size: 156
+train_batch_size: 196
 grad_accumulation: 1
 weight_decay: 1e-5
 gradient_clip_val: 10.0
@@ -67,6 +71,7 @@ fp16: True
 train_subset: 1
 #valid_subset_of_train: 0.01
 valid_subset: 1
+shard_valid: false
 val_check_interval: 1.0 # 1.0 This doesn't work
 lazy_loading: False # Use lazy loading mode
 max_shard_size: 1_000_000 # Max data shard size for lazy loading, may influence shuffling mechanics

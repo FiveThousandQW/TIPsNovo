@@ -5,7 +5,7 @@ valid_path:                                         # 分组验证：key 作为�
   HLAI:  /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class1_val_Spect.parquet
   HLAII: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class2_val_Spect.parquet
 
-train_subset: 1                                     # 训练采样比例；正式训练设为 1.0
+train_subset: 1                                   # 训练采样比例；正式训练设为 1.0
 valid_subset: 1                                     # 验证采样比例；调参可小一点加快
 
 

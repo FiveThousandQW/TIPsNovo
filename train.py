@@ -31,6 +31,7 @@ from .constants import ANNOTATED_COLUMN, ANNOTATION_ERROR
 from .inference import Decoder, GreedyDecoder, ScoredSequence
 # ====== 只保留 collate_batch / remove_modifications，去掉旧 SpectrumDataset ======
 from .transformer.dataset import collate_batch, remove_modifications
+from .utils.collate_ext import collate_with_group
 from .transformer.model import InstaNovo
 from .types import (
     Peptide,
@@ -492,17 +493,17 @@ class PTModule(L.LightningModule):
 
 # ====================== 训练入口 ======================
 
-def collate_with_group(batch):
-    """验证集用的 collate：在 collate_batch 基础上带回 groups（如有）"""
-    if not batch:
-        return collate_batch(batch)
-    if len(batch[0]) == 5:
-        # (spectrum, pmz, z, pep, group) —— 训练不走这里
-        groups = [b[4] for b in batch]
-        core = [(b[0], b[1], b[2], b[3]) for b in batch]
-        spectra, precursors, spectra_mask, peptides, peptides_mask = collate_batch(core)
-        return spectra, precursors, spectra_mask, peptides, peptides_mask, groups
-    return collate_batch(batch)
+# def collate_with_group(batch):
+#     """验证集用的 collate：在 collate_batch 基础上带回 groups（如有）"""
+#     if not batch:
+#         return collate_batch(batch)
+#     if len(batch[0]) == 5:
+#         # (spectrum, pmz, z, pep, group) —— 训练不走这里
+#         groups = [b[4] for b in batch]
+#         core = [(b[0], b[1], b[2], b[3]) for b in batch]
+#         spectra, precursors, spectra_mask, peptides, peptides_mask = collate_batch(core)
+#         return spectra, precursors, spectra_mask, peptides, peptides_mask, groups
+#     return collate_batch(batch)
 
 
 def train(config: DictConfig) -> None:

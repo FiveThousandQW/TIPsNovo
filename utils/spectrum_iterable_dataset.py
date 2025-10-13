@@ -55,9 +55,6 @@ def _resolve_arrow_files(data_path: str | Path, split: str) -> List[Tuple[Path, 
     return files
 
 
-
-
-
 def _clean_and_remap_batch(tbl: pa.Table) -> pl.DataFrame:
     df = pl.from_arrow(tbl)
 
@@ -352,6 +349,7 @@ class SpectrumIterableDataset(IterableDataset):
 
         if mz_array.numel() == 0:
             return torch.tensor([[0.0, 1.0]], dtype=torch.float32)
+
 
         if int(self.n_peaks) < int_array.numel():
             topk = torch.topk(int_array, k=self.n_peaks, largest=True, sorted=False)

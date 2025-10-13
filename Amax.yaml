@@ -68,10 +68,10 @@ fp16: True
 
 
 # Training data parameters
-train_subset: 1
+train_subset: 0.01
 #valid_subset_of_train: 0.01
-valid_subset: 1
-shard_valid: false
+valid_subset: 0.1
+shard_valid: True
 val_check_interval: 1.0 # 1.0 This doesn't work
 lazy_loading: False # Use lazy loading mode
 max_shard_size: 1_000_000 # Max data shard size for lazy loading, may influence shuffling mechanics

@@ -147,6 +147,7 @@ class PTModule(L.LightningModule):
         self.train_start_time: float | None = None
         self.valid_epoch_start_time: float | None = None
         self.valid_epoch_step = 0
+        self.train_epoch_step = 0
 
         # 分布式验证的全局聚合缓存
         self._vloss_sum: float = 0.0
@@ -205,6 +206,7 @@ class PTModule(L.LightningModule):
         if self.train_epoch_start_time is None:
             self.train_epoch_start_time = time.time()
             self.valid_epoch_start_time = None
+            self.train_epoch_step = 0
         if self.train_start_time is None:
             self.train_start_time = time.time()
 
@@ -225,16 +227,17 @@ class PTModule(L.LightningModule):
             self.running_loss = 0.99 * self.running_loss + (1 - 0.99) * loss.item()
 
         # 日志（不再依赖 len(dataloader)）
-        if self._log_ok() and ((self.steps + 1) % max(1, int(self.config.get("console_logging_steps", 2000) * self.step_scale))) == 0:
+        if self._log_ok() and (
+                (self.steps + 1) % max(1, int(self.config.get("console_logging_steps", 2000) * self.step_scale))) == 0:
             lr = self.trainer.lr_scheduler_configs[0].scheduler.get_last_lr()[0]
             delta = time.time() - self.train_epoch_start_time
-            epoch_step = self.steps % self.updates_per_epoch
-            est_total = delta / (epoch_step + 1) * (self.updates_per_epoch - epoch_step - 1)
+            current_step = self.train_epoch_step + 1  # ✅ 使用 train_epoch_step
+            est_total = delta / current_step * (self.updates_per_epoch - current_step)
             logger.info(
                 f"[TRAIN] [Epoch {self.trainer.current_epoch:02d}/{self.trainer.max_epochs - 1:02d}"
                 f" Step {self.steps + 1:06d}] "
-                f"[Batch {epoch_step + 1:05d}/{self.updates_per_epoch:05d}] "
-                f"[{_format_time(delta)}/{_format_time(est_total)}, {(delta / (epoch_step + 1)):.3f}s/it]: "
+                f"[Batch {current_step:05d}/{self.updates_per_epoch:05d}] "
+                f"[{_format_time(delta)}/{_format_time(est_total)}, {(delta / current_step):.3f}s/it]: "
                 f"train_loss_raw={loss.item():.4f}, running_loss={self.running_loss:.4f}, LR={lr:.6f}"
             )
 
@@ -246,6 +249,7 @@ class PTModule(L.LightningModule):
             self.sw.add_scalar("optim/epoch", self.trainer.current_epoch, self.steps + 1)
 
         self.steps += 1
+        self.train_epoch_step += 1
         return loss
 
     def validation_step(
@@ -308,17 +312,19 @@ class PTModule(L.LightningModule):
         self._vloss_sum += float(loss.item())
         self._vbatch_count += 1
 
-        if self._log_ok() and ((self.valid_epoch_step + 1) % max(1, int(self.config.get("console_logging_steps", 2000) * self.step_scale))) == 0:
+        if self._log_ok() and ((self.valid_epoch_step + 1) % max(1, int(self.config.get("console_logging_steps",
+                                                                                        2000) * self.step_scale))) == 0:
             delta = time.time() - self.valid_epoch_start_time
-            epoch_step = self.valid_epoch_step % self.valid_updates_per_epoch
-            est_total = delta / (epoch_step + 1) * (self.valid_updates_per_epoch - epoch_step - 1)
+            current_step = self.valid_epoch_step + 1
+            est_total = delta / current_step * (self.valid_updates_per_epoch - current_step)
             logger.info(
                 f"[VALIDATION] [Epoch {self.trainer.current_epoch:02d}/"
                 f"{self.trainer.max_epochs - 1:02d} Step {self.steps + 1:06d}] "
-                f"[Batch {epoch_step + 1:05d}/{self.valid_updates_per_epoch:05d}] "
+                f"[Batch {current_step:05d}/{self.valid_updates_per_epoch:05d}] "
                 f"[{_format_time(delta)}/{_format_time(est_total)}, "
-                f"{(delta / (epoch_step + 1)):.3f}s/it]"
+                f"{(delta / current_step):.3f}s/it]"
             )
+
 
         self.valid_epoch_step += 1
         return float(loss.item())
@@ -355,6 +361,7 @@ class PTModule(L.LightningModule):
         # reset 全局 loss 缓存
         self._vloss_sum = 0.0
         self._vbatch_count = 0
+        self.valid_epoch_step = 0
 
     def on_validation_epoch_end(self) -> None:
         epoch = self.trainer.current_epoch
@@ -368,7 +375,8 @@ class PTModule(L.LightningModule):
             dist.all_reduce(t, op=dist.ReduceOp.SUM)
             global_valid_loss = (t[0] / max(t[1], 1.0)).item()
         else:
-            global_valid_loss = float(np.mean(self.valid_metrics["valid_loss"])) if self.valid_metrics["valid_loss"] else 0.0
+            global_valid_loss = float(np.mean(self.valid_metrics["valid_loss"])) if self.valid_metrics[
+                "valid_loss"] else 0.0
         if self._log_ok():
             self.sw.add_scalar("eval/valid_loss", global_valid_loss, epoch)
 
@@ -400,26 +408,88 @@ class PTModule(L.LightningModule):
                 f"valid_loss={global_valid_loss:.5f}"
             )
             logger.info(f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] Metrics (global):")
-            logger.info(f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'aa_er':11s}{aa_er_g:.3f}")
-            logger.info(f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'aa_prec':11s}{aa_prec_g:.3f}")
-            logger.info(f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'aa_recall':11s}{aa_recall_g:.3f}")
-            logger.info(f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'pep_recall':11s}{pep_recall_g:.3f}")
+            logger.info(
+                f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'aa_er':11s}{aa_er_g:.3f}")
+            logger.info(
+                f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'aa_prec':11s}{aa_prec_g:.3f}")
+            logger.info(
+                f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'aa_recall':11s}{aa_recall_g:.3f}")
+            logger.info(
+                f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'pep_recall':11s}{pep_recall_g:.3f}")
 
-        # ---------------- 分组验证 ----------------
+        # ---------------- 分组验证（支持分片）----------------
         if self.validation_groups is not None:
-            # 分片验证下：跳过分组指标，但 global_zero 仍写出全局 ndjson 以便离线分析
+            # ✅ 新逻辑：分片验证下也能正确计算分组指标
             if self.shard_valid and dist.is_available() and dist.is_initialized():
                 if getattr(self.trainer, "is_global_zero", True):
-                    logger.warning(
-                        "Shard-valid is enabled: skip grouped validation metrics due to order misalignment across ranks."
-                    )
+                    # 方案：使用 all_gather 收集的全局数据 + 同步后的 validation_groups
+
+                    # 1. 收集每个 rank 的验证组标签
+                    ws = dist.get_world_size()
+                    local_groups = self.validation_groups.to_list() if hasattr(self.validation_groups,
+                                                                               'to_list') else list(
+                        self.validation_groups)
+                    gathered_groups: list[list | None] = [None for _ in range(ws)]
+                    dist.all_gather_object(gathered_groups, local_groups)
+
+                    # 2. 展平所有组标签
+                    all_groups = []
+                    for part in gathered_groups:
+                        if part:
+                            all_groups.extend(part)
+
+                    # 3. 确保长度匹配
+                    n_preds = len(all_preds)
+                    n_groups = len(all_groups)
+
+                    if n_preds != n_groups:
+                        logger.warning(
+                            f"Shard-valid: preds={n_preds}, groups={n_groups}. "
+                            f"Attempting to align by truncating to minimum length."
+                        )
+                        min_len = min(n_preds, n_groups)
+                        all_preds = all_preds[:min_len]
+                        all_targs = all_targs[:min_len]
+                        all_groups = all_groups[:min_len]
+
+                    # 4. 转换为 polars Series 以便使用 filter
+                    preds_series = pl.Series(all_preds)
+                    targs_series = pl.Series(all_targs)
+                    groups_series = pl.Series(all_groups)
+
+                    # 5. 计算每个组的指标
+                    for group in groups_series.unique():
+                        idx = (groups_series == group)
+                        group_preds = preds_series.filter(idx)
+                        group_targs = targs_series.filter(idx)
+
+                        if len(group_preds) > 0:
+                            aa_prec, aa_recall, pep_recall, _ = self.metrics.compute_precision_recall(
+                                group_targs, group_preds
+                            )
+                            aa_er = self.metrics.compute_aa_er(group_targs, group_preds)
+
+                            self.sw.add_scalar(f"eval/{group}_aa_er", aa_er, epoch)
+                            self.sw.add_scalar(f"eval/{group}_aa_prec", aa_prec, epoch)
+                            self.sw.add_scalar(f"eval/{group}_aa_recall", aa_recall, epoch)
+                            self.sw.add_scalar(f"eval/{group}_pep_recall", pep_recall, epoch)
+
+                            logger.info(f"[VALIDATION] [Epoch {epoch:02d}] Group {group}: "
+                                        f"aa_er={aa_er:.3f}, pep_recall={pep_recall:.3f} (n={len(group_preds)})")
+
+                    # 6. 写出 ndjson（可选）
                     now = datetime.datetime.now()
                     timestamp = now.strftime("%Y%m%d_%H%M")
                     output_name = f"{self.config['run_name']}{timestamp}_target_pred.ndjson"
                     out_path = Path(self.config['model_save_folder_path']) / output_name
-                    pl.DataFrame({"targs": pl.Series(all_targs), "preds": pl.Series(all_preds)}).write_ndjson(str(out_path))
+                    pl.DataFrame({
+                        "targs": targs_series,
+                        "preds": preds_series,
+                        "group": groups_series
+                    }).write_ndjson(str(out_path))
+
             else:
-                # 保持原逻辑（仅 global_zero 执行分组评估和落盘）
+                # 非分片模式：保持原逻辑
                 preds_list = list(self.valid_predictions)
                 targs_list = list(self.valid_targets)
                 if dist.is_available() and dist.is_initialized():
@@ -430,6 +500,7 @@ class PTModule(L.LightningModule):
                         self.valid_epoch_step = 0
                         self._reset_valid_metrics()
                         return
+
                 expected = len(self.validation_groups)
                 n_pred, n_targ = len(preds_list), len(targs_list)
                 if n_pred != expected or n_targ != expected:
@@ -580,6 +651,16 @@ def train(config: DictConfig) -> None:
         else:
             raise
 
+    # 只要 < 1.0 就执行；注意用同一个随机种子保证可复现
+    _tfrac = float(config.get("train_subset", 1.0))
+    _vfrac = float(config.get("valid_subset", 1.0))
+    if 0.0 < _tfrac < 1.0:
+        logger.info(f"[EARLY SUBSET] Train subset fraction={_tfrac}")
+        train_sdf.sample_subset(fraction=_tfrac, seed=42)
+    if 0.0 < _vfrac < 1.0:
+        logger.info(f"[EARLY SUBSET] Valid subset fraction={_vfrac}")
+        valid_sdf.sample_subset(fraction=_vfrac, seed=42)
+
     # 若未指定 valid_path，则从训练集拆分
     if config.get("valid_path", None) is None:
         logger.info("Validation path not specified, generating from training set.")
@@ -661,8 +742,8 @@ def train(config: DictConfig) -> None:
             )
 
     # 采样（可选）
-    train_sdf.sample_subset(fraction=config.get("train_subset", 1.0), seed=42)
-    valid_sdf.sample_subset(fraction=config.get("valid_subset", 1.0), seed=42)
+    # train_sdf.sample_subset(fraction=config.get("train_subset", 1.0), seed=42)
+    # valid_sdf.sample_subset(fraction=config.get("valid_subset", 1.0), seed=42)
 
     # ---------- 将过滤后的 SDF 保存为分片（方案的关键） ----------
     tmp_root = os.path.join(config.get("model_save_folder_path", "./checkpoints"), "_iter_shards")
@@ -721,6 +802,7 @@ def train(config: DictConfig) -> None:
             valid_done.exists() or valid_done.write_text("ok")
     else:
         _wait_for_file(valid_done)
+
 
     # 估算 world_size：优先环境变量，其次看见的 GPU 数
     _, _ws_env = _ddp_rank_world_size()
@@ -808,9 +890,13 @@ def train(config: DictConfig) -> None:
     rank, world_size = _ddp_rank_world_size()
     if world_size > 1:
         train_ds = ShardByRank(train_ds, world_size, rank)
-        # 仅在启用 shard_valid 时对验证集分片
-        if bool(config.get("shard_valid", False)):
-            valid_ds = ShardByRank(valid_ds, world_size, rank)
+
+    # ——关键：无论 shard_valid 是否开启，都至少做“worker 级分片”
+    # ——如果 shard_valid=True，则再额外按 rank 切分；否则只按 worker 切分
+    if bool(config.get("shard_valid", False)) and world_size > 1:
+        valid_ds = ShardByRank(valid_ds, world_size, rank)  # rank + worker 分片
+    else:
+        valid_ds = ShardByRank(valid_ds, 1, 0)  # 仅 worker 分片
 
     _tw = int(config.get("num_workers", 4))
     pin_cuda = torch.cuda.is_available()
@@ -1030,15 +1116,20 @@ def train(config: DictConfig) -> None:
 
     logger.info("Initializing Pytorch Lightning trainer.")
 
-    # --- 关键：把 float 的 val_check_interval 映射成“整数 batch 数”以兼容 IterableDataset ---
+    # --- 关键：把 float 的 val_check_interval 映射成"整数 batch 数"以兼容 IterableDataset ---
     _vci_cfg = config.get("val_check_interval", 1.0)
     if isinstance(_vci_cfg, float):
         if _vci_cfg >= 1.0:
-            _vci = max(1, int(updates_per_epoch))   # 只在 epoch 末验证
+            # ✅ 对于 >=1.0，设置为 1.0 表示每个 epoch 结束时验证
+            _vci = 1.0
         else:
-            _vci = max(1, int(np.ceil(updates_per_epoch * _vci_cfg)))  # 按比例换算成 batch 数
+            # 对于 <1.0，按比例换算成 batch 数
+            _vci = max(1, int(np.ceil(updates_per_epoch * _vci_cfg)))
     else:
         _vci = int(_vci_cfg)
+
+    # ✅ 关键：明确限制验证 batch 数，防止 IterableDataset 无限循环
+    _limit_val_batches = valid_updates_per_epoch
 
     trainer = L.pytorch.Trainer(
         profiler=(profiler if config["profiler"] else None) if "profiler" in locals() else None,
@@ -1054,6 +1145,8 @@ def train(config: DictConfig) -> None:
         enable_progress_bar=False,
         strategy=strategy,
         val_check_interval=_vci,
+        limit_val_batches=_limit_val_batches,  # ✅ 防止验证循环
+        limit_train_batches=updates_per_epoch
     )
 
     logger.info("InstaNovo training started.")

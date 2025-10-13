@@ -1,4 +1,4 @@
-# train.py  —— 使用 SpectrumIterableDataset 的替换版（方案 B 完整实现）
+# train.py  —— 使用 SpectrumIterableDataset 的替换版（含分组与分布式修复）
 from __future__ import annotations
 import datetime
 import os
@@ -6,7 +6,7 @@ import sys
 import time
 import warnings
 from pathlib import Path
-from typing import Any, Tuple, cast
+from typing import Any, Tuple, cast, List
 
 import hydra
 from datetime import timedelta
@@ -55,9 +55,6 @@ CONFIG_PATH = Path(__file__).parent.parent / "configs"
 
 warnings.filterwarnings("ignore", message=".*does not have many workers*")
 
-from torch.utils.data import IterableDataset, get_worker_info
-
-
 def _ddp_rank_world_size():
     if dist.is_available() and dist.is_initialized():
         return dist.get_rank(), dist.get_world_size()
@@ -65,28 +62,6 @@ def _ddp_rank_world_size():
     rank = int(os.environ.get("RANK", os.environ.get("LOCAL_RANK", "0")))
     world_size = int(os.environ.get("WORLD_SIZE", os.environ.get("LOCAL_WORLD_SIZE", "1")))
     return rank, world_size
-
-
-class ShardByRank(IterableDataset):
-    def __init__(self, base: IterableDataset, world_size: int, rank: int):
-        self.base = base
-        self.world_size = world_size
-        self.rank = rank
-
-    def __iter__(self):
-        it = iter(self.base)
-        wi = get_worker_info()
-        if wi is None:
-            global_unit_id = self.rank
-            n_units = self.world_size
-        else:
-            global_unit_id = self.rank * wi.num_workers + wi.id
-            n_units = self.world_size * wi.num_workers
-
-        for i, sample in enumerate(it):
-            if (i % n_units) == global_unit_id:
-                yield sample
-
 
 def _is_rank_zero() -> bool:
     # lightning 在 spawn 时会设置 RANK 环境变量；单卡/非DDP则默认 0
@@ -161,7 +136,6 @@ class PTModule(L.LightningModule):
         self.valid_updates_per_epoch = max(int(valid_updates_per_epoch), 1)
 
         # 仅 global_zero 打日志/写 TB
-        # 注意：__init__ 阶段 trainer 还未 attach，这里用方法延后判断
         def _compiled_forward(
             spectra: Tensor,
             precursors: Tensor,
@@ -231,7 +205,7 @@ class PTModule(L.LightningModule):
                 (self.steps + 1) % max(1, int(self.config.get("console_logging_steps", 2000) * self.step_scale))) == 0:
             lr = self.trainer.lr_scheduler_configs[0].scheduler.get_last_lr()[0]
             delta = time.time() - self.train_epoch_start_time
-            current_step = self.train_epoch_step + 1  # ✅ 使用 train_epoch_step
+            current_step = self.train_epoch_step + 1
             est_total = delta / current_step * (self.updates_per_epoch - current_step)
             logger.info(
                 f"[TRAIN] [Epoch {self.trainer.current_epoch:02d}/{self.trainer.max_epochs - 1:02d}"
@@ -260,6 +234,13 @@ class PTModule(L.LightningModule):
             Bool[SpectrumMask, " batch"],
             Integer[Peptide, " batch"],
             Bool[PeptideMask, " batch"],
+        ] | Tuple[
+            Float[Spectrum, " batch"],
+            Float[PrecursorFeatures, " batch"],
+            Bool[SpectrumMask, " batch"],
+            Integer[Peptide, " batch"],
+            Bool[PeptideMask, " batch"],
+            List[str],
         ],
         *args: Any,
     ) -> float:
@@ -271,7 +252,12 @@ class PTModule(L.LightningModule):
                 )
             self.valid_epoch_start_time = time.time()
 
-        spectra, precursors, spectra_mask, peptides, peptides_mask = batch
+        if len(batch) == 6:
+            spectra, precursors, spectra_mask, peptides, peptides_mask, groups = batch  # type: ignore
+            self.valid_groups += list(groups)
+        else:
+            spectra, precursors, spectra_mask, peptides, peptides_mask = batch  # type: ignore
+
         spectra = spectra.to(self.device)
         precursors = precursors.to(self.device)
         spectra_mask = spectra_mask.to(self.device)
@@ -325,17 +311,23 @@ class PTModule(L.LightningModule):
                 f"{(delta / current_step):.3f}s/it]"
             )
 
-
         self.valid_epoch_step += 1
         return float(loss.item())
 
     def on_train_epoch_end(self) -> None:
         epoch = self.trainer.current_epoch
+        if self.train_start_time is None:
+            if self._log_ok():
+                logger.warning(f"[TRAIN] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] "
+                                f"No training steps were executed (empty dataloader?). Skipping epoch-end logging.")
+            self._last_epoch_train_loss = float(self.running_loss) if self.running_loss is not None else 0.0
+            self.running_loss = None
+            self.train_epoch_start_time = None
+            self.train_epoch_step = 0
+            return
         if self._log_ok():
             if self.running_loss is not None:
-                # 更直观的名字 + 同一目录：
                 self.sw.add_scalar("train/epoch_loss", self.running_loss, epoch)
-                # 主动刷盘，避免后续卡住时事件丢失
                 try:
                     self.sw.flush()
                 except Exception:
@@ -355,9 +347,10 @@ class PTModule(L.LightningModule):
         self.train_epoch_step = 0
 
     def on_validation_epoch_start(self) -> None:
-        # 注意：这里的注解在原始代码里写成 list[list[str]]，但逻辑上是 flat list[str]，保持原样不动
-        self.valid_predictions: list[list[str]] = []
-        self.valid_targets: list[list[str]] = []
+        # 这里逻辑上是 flat list[str]
+        self.valid_predictions: list[str] = []
+        self.valid_targets: list[str] = []
+        self.valid_groups: list[str] = []
         # reset 全局 loss 缓存
         self._vloss_sum = 0.0
         self._vbatch_count = 0
@@ -380,19 +373,40 @@ class PTModule(L.LightningModule):
         if self._log_ok():
             self.sw.add_scalar("eval/valid_loss", global_valid_loss, epoch)
 
-        # ---------------- 收集全局预测/目标 ----------------
-        all_preds = list(self.valid_predictions)
-        all_targs = list(self.valid_targets)
+        # ---------------- 收集全局预测/目标/分组 ----------------
         if self.shard_valid and dist.is_available() and dist.is_initialized():
             ws = dist.get_world_size()
+            local_preds = list(self.valid_predictions)
+            local_targs = list(self.valid_targets)
+            local_groups = list(self.valid_groups)
+
             gathered_preds: list[list[str] | None] = [None for _ in range(ws)]
             gathered_targs: list[list[str] | None] = [None for _ in range(ws)]
-            dist.all_gather_object(gathered_preds, all_preds)
-            dist.all_gather_object(gathered_targs, all_targs)
+            gathered_groups: list[list[str] | None] = [None for _ in range(ws)]
+            # 所有 rank 一起 gather（避免死锁）
+            dist.all_gather_object(gathered_preds, local_preds)
+            dist.all_gather_object(gathered_targs, local_targs)
+            dist.all_gather_object(gathered_groups, local_groups)
+
             all_preds = [x for part in gathered_preds for x in (part or [])]
             all_targs = [x for part in gathered_targs for x in (part or [])]
+            all_groups = [x for part in gathered_groups for x in (part or [])]
+        else:
+            all_preds = list(self.valid_predictions)
+            all_targs = list(self.valid_targets)
+            all_groups = list(self.valid_groups)
 
-        # 全局 AA / peptide 指标
+        # 对齐长度
+        m = min(len(all_preds), len(all_targs))
+        all_preds = all_preds[:m]
+        all_targs = all_targs[:m]
+        if len(all_groups) >= m:
+            all_groups = all_groups[:m]
+        else:
+            # 没有 group 的情况下也能跑全局指标
+            all_groups = []
+
+        # ---------------- 全局 AA / peptide 指标 ----------------
         aa_prec_g, aa_recall_g, pep_recall_g, _ = self.metrics.compute_precision_recall(all_targs, all_preds)
         aa_er_g = self.metrics.compute_aa_er(all_targs, all_preds)
         if self._log_ok():
@@ -401,7 +415,6 @@ class PTModule(L.LightningModule):
             self.sw.add_scalar("eval/aa_recall", aa_recall_g, epoch)
             self.sw.add_scalar("eval/pep_recall", pep_recall_g, epoch)
 
-        if self._log_ok():
             logger.info(
                 f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] "
                 f"train_loss={self._last_epoch_train_loss:.5f}, "
@@ -418,134 +431,41 @@ class PTModule(L.LightningModule):
                 f"[VALIDATION] [Epoch {epoch:02d}/{self.trainer.max_epochs - 1:02d}] - {'pep_recall':11s}{pep_recall_g:.3f}")
 
         # ---------------- 分组验证（支持分片）----------------
-        if self.validation_groups is not None:
-            # ✅ 新逻辑：分片验证下也能正确计算分组指标
-            if self.shard_valid and dist.is_available() and dist.is_initialized():
-                if getattr(self.trainer, "is_global_zero", True):
-                    # 方案：使用 all_gather 收集的全局数据 + 同步后的 validation_groups
+        if self.validation_groups is not None and len(all_groups) > 0:
+            if self._log_ok():
+                preds_series = pl.Series(all_preds)
+                targs_series = pl.Series(all_targs)
+                groups_series = pl.Series(all_groups)
 
-                    # 1. 收集每个 rank 的验证组标签
-                    ws = dist.get_world_size()
-                    local_groups = self.validation_groups.to_list() if hasattr(self.validation_groups,
-                                                                               'to_list') else list(
-                        self.validation_groups)
-                    gathered_groups: list[list | None] = [None for _ in range(ws)]
-                    dist.all_gather_object(gathered_groups, local_groups)
+                for group in groups_series.unique():
+                    idx = (groups_series == group)
+                    gp = preds_series.filter(idx)
+                    gt = targs_series.filter(idx)
+                    if len(gp) == 0:
+                        continue
+                    aa_prec, aa_recall, pep_recall, _ = self.metrics.compute_precision_recall(gt, gp)
+                    aa_er = self.metrics.compute_aa_er(gt, gp)
+                    self.sw.add_scalar(f"eval/{group}_aa_er", aa_er, epoch)
+                    self.sw.add_scalar(f"eval/{group}_aa_prec", aa_prec, epoch)
+                    self.sw.add_scalar(f"eval/{group}_aa_recall", aa_recall, epoch)
+                    self.sw.add_scalar(f"eval/{group}_pep_recall", pep_recall, epoch)
+                    logger.info(f"[VALIDATION] [Epoch {epoch:02d}] Group {group}: "
+                                f"aa_er={aa_er:.3f}, pep_recall={pep_recall:.3f} (n={len(gp)})")
 
-                    # 2. 展平所有组标签
-                    all_groups = []
-                    for part in gathered_groups:
-                        if part:
-                            all_groups.extend(part)
-
-                    # 3. 确保长度匹配
-                    n_preds = len(all_preds)
-                    n_groups = len(all_groups)
-
-                    if n_preds != n_groups:
-                        logger.warning(
-                            f"Shard-valid: preds={n_preds}, groups={n_groups}. "
-                            f"Attempting to align by truncating to minimum length."
-                        )
-                        min_len = min(n_preds, n_groups)
-                        all_preds = all_preds[:min_len]
-                        all_targs = all_targs[:min_len]
-                        all_groups = all_groups[:min_len]
-
-                    # 4. 转换为 polars Series 以便使用 filter
-                    preds_series = pl.Series(all_preds)
-                    targs_series = pl.Series(all_targs)
-                    groups_series = pl.Series(all_groups)
-
-                    # 5. 计算每个组的指标
-                    for group in groups_series.unique():
-                        idx = (groups_series == group)
-                        group_preds = preds_series.filter(idx)
-                        group_targs = targs_series.filter(idx)
-
-                        if len(group_preds) > 0:
-                            aa_prec, aa_recall, pep_recall, _ = self.metrics.compute_precision_recall(
-                                group_targs, group_preds
-                            )
-                            aa_er = self.metrics.compute_aa_er(group_targs, group_preds)
-
-                            self.sw.add_scalar(f"eval/{group}_aa_er", aa_er, epoch)
-                            self.sw.add_scalar(f"eval/{group}_aa_prec", aa_prec, epoch)
-                            self.sw.add_scalar(f"eval/{group}_aa_recall", aa_recall, epoch)
-                            self.sw.add_scalar(f"eval/{group}_pep_recall", pep_recall, epoch)
-
-                            logger.info(f"[VALIDATION] [Epoch {epoch:02d}] Group {group}: "
-                                        f"aa_er={aa_er:.3f}, pep_recall={pep_recall:.3f} (n={len(group_preds)})")
-
-                    # 6. 写出 ndjson（可选）
-                    now = datetime.datetime.now()
-                    timestamp = now.strftime("%Y%m%d_%H%M")
-                    output_name = f"{self.config['run_name']}{timestamp}_target_pred.ndjson"
-                    out_path = Path(self.config['model_save_folder_path']) / output_name
-                    pl.DataFrame({
-                        "targs": targs_series,
-                        "preds": preds_series,
-                        "group": groups_series
-                    }).write_ndjson(str(out_path))
-
-            else:
-                # 非分片模式：保持原逻辑
-                preds_list = list(self.valid_predictions)
-                targs_list = list(self.valid_targets)
-                if dist.is_available() and dist.is_initialized():
-                    if not getattr(self.trainer, "is_global_zero", True):
-                        self.valid_predictions = []
-                        self.valid_targets = []
-                        self.valid_epoch_start_time = None
-                        self.valid_epoch_step = 0
-                        self._reset_valid_metrics()
-                        return
-
-                expected = len(self.validation_groups)
-                n_pred, n_targ = len(preds_list), len(targs_list)
-                if n_pred != expected or n_targ != expected:
-                    if getattr(self.trainer, "is_global_zero", True):
-                        logger.warning(
-                            f"DDP validation produced preds={n_pred}, targs={n_targ}, expected={expected}. "
-                            "Likely due to DistributedSampler padding. Truncating extras to match."
-                        )
-                    if n_pred >= expected and n_targ >= expected:
-                        preds_list = preds_list[:expected]
-                        targs_list = targs_list[:expected]
-                    else:
-                        raise RuntimeError(
-                            f"After DDP gather we have fewer samples than expected: "
-                            f"preds={n_pred}, targs={n_targ}, expected={expected}"
-                        )
-
-                preds = pl.Series(preds_list)
-                targs = pl.Series(targs_list)
-
-                is_global_zero = getattr(self.trainer, "is_global_zero", True)
-                if is_global_zero:
-                    now = datetime.datetime.now()
-                    timestamp = now.strftime("%Y%m%d_%H%M")
-                    output_name = f"{self.config['run_name']}{timestamp}_target_pred.ndjson"
-                    out_path = Path(self.config['model_save_folder_path']) / output_name
-                    pl.DataFrame({"targs": targs, "preds": preds}).write_ndjson(str(out_path))
-
-                assert len(preds) == len(self.validation_groups)
-                assert len(targs) == len(self.validation_groups)
-
-                for group in self.groups:
-                    idx = (self.validation_groups == group)
-                    aa_prec, aa_recall, pep_recall, _ = self.metrics.compute_precision_recall(
-                        targs.filter(idx), preds.filter(idx)
-                    )
-                    aa_er = self.metrics.compute_aa_er(targs.filter(idx), preds.filter(idx))
-                    if self._log_ok():
-                        self.sw.add_scalar(f"eval/{group}_aa_er", aa_er, epoch)
-                        self.sw.add_scalar(f"eval/{group}_aa_prec", aa_prec, epoch)
-                        self.sw.add_scalar(f"eval/{group}_aa_recall", aa_recall, epoch)
-                        self.sw.add_scalar(f"eval/{group}_pep_recall", pep_recall, epoch)
+                # 可选：写出预测-目标-组（仅 rank0）
+                now = datetime.datetime.now()
+                timestamp = now.strftime("%Y%m%d_%H%M")
+                output_name = f"{self.config['run_name']}{timestamp}_target_pred.ndjson"
+                out_path = Path(self.config['model_save_folder_path']) / output_name
+                pl.DataFrame({
+                    "targs": targs_series,
+                    "preds": preds_series,
+                    "group": groups_series
+                }).write_ndjson(str(out_path))
 
         self.valid_predictions = []
         self.valid_targets = []
+        self.valid_groups = []
         self.valid_epoch_start_time = None
         self.valid_epoch_step = 0
         self._reset_valid_metrics()
@@ -571,6 +491,20 @@ class PTModule(L.LightningModule):
 
 
 # ====================== 训练入口 ======================
+
+def collate_with_group(batch):
+    """验证集用的 collate：在 collate_batch 基础上带回 groups（如有）"""
+    if not batch:
+        return collate_batch(batch)
+    if len(batch[0]) == 5:
+        # (spectrum, pmz, z, pep, group) —— 训练不走这里
+        groups = [b[4] for b in batch]
+        core = [(b[0], b[1], b[2], b[3]) for b in batch]
+        spectra, precursors, spectra_mask, peptides, peptides_mask = collate_batch(core)
+        return spectra, precursors, spectra_mask, peptides, peptides_mask, groups
+    return collate_batch(batch)
+
+
 def train(config: DictConfig) -> None:
     torch.manual_seed(config.get("seed", 101))
     torch.set_float32_matmul_precision("high")
@@ -741,12 +675,9 @@ def train(config: DictConfig) -> None:
                 f"{config.get('max_charge', 10)}. These rows will be skipped."
             )
 
-    # 采样（可选）
-    # train_sdf.sample_subset(fraction=config.get("train_subset", 1.0), seed=42)
-    # valid_sdf.sample_subset(fraction=config.get("valid_subset", 1.0), seed=42)
-
-    # ---------- 将过滤后的 SDF 保存为分片（方案的关键） ----------
-    tmp_root = os.path.join(config.get("model_save_folder_path", "./checkpoints"), "_iter_shards")
+    # ---------- 将过滤后的 SDF 保存为分片 ----------
+    tmp_root = os.path.join(config.get("model_save_folder_path", "./checkpoints"),
+                            "_iter_shards", config.get("run_name", "run"))
     train_tmp_dir = Path(tmp_root) / "train"
     valid_tmp_dir = Path(tmp_root) / "valid"
     train_tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -756,11 +687,10 @@ def train(config: DictConfig) -> None:
     valid_partition = config.get("valid_partition", "valid")
     dataset_name = config.get("dataset_name", "ms")
 
-    # 哨兵文件，用来告知“保存完成”
+    # 哨兵文件
     train_done = train_tmp_dir / ".shards_done"
     valid_done = valid_tmp_dir / ".shards_done"
 
-    # 若目录已存在分片且不想覆盖，可通过配置跳过重写
     overwrite = bool(config.get("overwrite_iter_shards", False))
 
     def _has_shards(d: Path) -> bool:
@@ -770,7 +700,7 @@ def train(config: DictConfig) -> None:
     if _is_rank_zero():
         if overwrite or not _has_shards(train_tmp_dir):
             logger.info(f"Saving filtered TRAIN shards to: {train_tmp_dir}")
-            train_done.exists() and train_done.unlink(missing_ok=True)  # 清理旧哨兵
+            train_done.exists() and train_done.unlink(missing_ok=True)
             train_sdf.save(
                 train_tmp_dir,
                 partition=train_partition,
@@ -782,7 +712,6 @@ def train(config: DictConfig) -> None:
             logger.info(f"Found existing TRAIN shards in {train_tmp_dir}, skipping save.")
             train_done.exists() or train_done.write_text("ok")
     else:
-        # 非 rank0 等待写完
         _wait_for_file(train_done)
 
     # --- VALID shards ---
@@ -803,8 +732,7 @@ def train(config: DictConfig) -> None:
     else:
         _wait_for_file(valid_done)
 
-
-    # 估算 world_size：优先环境变量，其次看见的 GPU 数
+    # 估算 world_size
     _, _ws_env = _ddp_rank_world_size()
     _ws_guess = _ws_env if _ws_env > 1 else (torch.cuda.device_count() or 1)
 
@@ -872,6 +800,9 @@ def train(config: DictConfig) -> None:
         shuffle_buffer=config.get("shuffle_buffer", 0),
         use_threads=False,
         use_sus_preprocess=config.get("use_sus_preprocess", True),
+        shard_across_ranks=True,
+        return_group=False,            # 训练不需要 group
+        shuffle_files=True,
     )
 
     valid_ds = SpectrumIterableDataset(
@@ -885,18 +816,11 @@ def train(config: DictConfig) -> None:
         shuffle_buffer=0,
         use_threads=False,
         use_sus_preprocess=config.get("use_sus_preprocess", True),
+        shard_across_ranks=bool(config.get("shard_valid", False)),
+        return_group=True,                         # 验证需要 group
+        group_mapping=(validation_group_mapping if validation_group_mapping is not None else None),
+        shuffle_files=False,                       # 验证不打乱分片顺序（可选）
     )
-
-    rank, world_size = _ddp_rank_world_size()
-    if world_size > 1:
-        train_ds = ShardByRank(train_ds, world_size, rank)
-
-    # ——关键：无论 shard_valid 是否开启，都至少做“worker 级分片”
-    # ——如果 shard_valid=True，则再额外按 rank 切分；否则只按 worker 切分
-    if bool(config.get("shard_valid", False)) and world_size > 1:
-        valid_ds = ShardByRank(valid_ds, world_size, rank)  # rank + worker 分片
-    else:
-        valid_ds = ShardByRank(valid_ds, 1, 0)  # 仅 worker 分片
 
     _tw = int(config.get("num_workers", 4))
     pin_cuda = torch.cuda.is_available()
@@ -906,9 +830,9 @@ def train(config: DictConfig) -> None:
         shuffle=False,
         collate_fn=collate_batch,
         pin_memory=pin_cuda,
-        persistent_workers=(_tw > 0),  # <<=== 改为持久化
+        persistent_workers=(_tw > 0),
         drop_last=True,
-        multiprocessing_context="spawn",  # <<=== 关键
+        multiprocessing_context="spawn",
         **({"pin_memory_device": "cuda"} if pin_cuda else {}),
     )
     if _tw > 0:
@@ -920,16 +844,16 @@ def train(config: DictConfig) -> None:
         batch_size=config["predict_batch_size"],
         num_workers=_vw,
         shuffle=False,
-        collate_fn=collate_batch,
         pin_memory=pin_cuda,
-        persistent_workers=(_vw > 0),  # <<=== 改为持久化
+        persistent_workers=(_vw > 0),
         drop_last=False,
-        multiprocessing_context="spawn",  # <<=== 关键
+        multiprocessing_context="spawn",
         **({"pin_memory_device": "cuda"} if pin_cuda else {}),
     )
     if _vw > 0:
         _valid_kwargs["prefetch_factor"] = config.get("eval_prefetch_factor", 1)
-    valid_dl = DataLoader(valid_ds, **_valid_kwargs)
+    # 验证用带 group 的 collate
+    valid_dl = DataLoader(valid_ds, collate_fn=collate_with_group, **_valid_kwargs)
 
     # 日志
     step_scale = 32 / config["train_batch_size"]
@@ -1008,16 +932,6 @@ def train(config: DictConfig) -> None:
     # 设备
     device = check_device(config=config)
     model = model.to(device)
-
-    # 抽一个 batch 做 sanity check（可选）
-    # batch = next(iter(train_dl))
-    # spectra, precursors, spectra_mask, peptides, peptides_mask = batch
-    # logger.info("Sample batch:")
-    # logger.info(f" - spectra.shape={tuple(spectra.shape)}")
-    # logger.info(f" - precursors.shape={tuple(precursors.shape)}")
-    # logger.info(f" - spectra_mask.shape={tuple(spectra_mask.shape)}")
-    # logger.info(f" - peptides.shape={tuple(peptides.shape)}")
-    # logger.info(f" - peptides_mask.shape={tuple(peptides_mask.shape)}")
 
     if config.get("fp16", True) and device.lower() == "cpu":
         logger.warning("fp16 is enabled but device type is cpu. fp16 will be disabled.")
@@ -1116,19 +1030,17 @@ def train(config: DictConfig) -> None:
 
     logger.info("Initializing Pytorch Lightning trainer.")
 
-    # --- 关键：把 float 的 val_check_interval 映射成"整数 batch 数"以兼容 IterableDataset ---
+    # --- 把 float 的 val_check_interval 映射成整数 batch 数以兼容 IterableDataset ---
     _vci_cfg = config.get("val_check_interval", 1.0)
     if isinstance(_vci_cfg, float):
         if _vci_cfg >= 1.0:
-            # ✅ 对于 >=1.0，设置为 1.0 表示每个 epoch 结束时验证
             _vci = 1.0
         else:
-            # 对于 <1.0，按比例换算成 batch 数
             _vci = max(1, int(np.ceil(updates_per_epoch * _vci_cfg)))
     else:
         _vci = int(_vci_cfg)
 
-    # ✅ 关键：明确限制验证 batch 数，防止 IterableDataset 无限循环
+    # 明确限制验证 batch 数，防止 IterableDataset 无限循环
     _limit_val_batches = valid_updates_per_epoch
 
     trainer = L.pytorch.Trainer(
@@ -1145,7 +1057,7 @@ def train(config: DictConfig) -> None:
         enable_progress_bar=False,
         strategy=strategy,
         val_check_interval=_vci,
-        limit_val_batches=_limit_val_batches,  # ✅ 防止验证循环
+        limit_val_batches=_limit_val_batches,
         limit_train_batches=updates_per_epoch
     )
 

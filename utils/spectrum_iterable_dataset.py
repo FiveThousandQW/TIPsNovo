@@ -1,8 +1,10 @@
 # utils/spectrum_iterable_dataset.py
 from __future__ import annotations
+import math
+import os
 import random
 from pathlib import Path
-from typing import List, Tuple, Iterator
+from typing import Iterator, List, Tuple, Dict, Optional
 
 import numpy as np
 import polars as pl
@@ -10,8 +12,8 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 import torch
 from torch import Tensor
+from torch.utils.data import IterableDataset, get_worker_info
 import spectrum_utils.spectrum as sus
-from torch.utils.data import IterableDataset
 
 # 复用你仓库里的引用
 from ..__init__ import console
@@ -22,7 +24,35 @@ from ..utils.colorlogging import ColorLog
 
 logger = ColorLog(console, __name__).logger
 
+
+# --------------------------- DDP / 并发辅助 ---------------------------
+
+def _get_rank_world_size() -> tuple[int, int]:
+    """优先用 torch.distributed，回退到环境变量；单进程则 (0,1)。"""
+    try:
+        import torch.distributed as dist
+        if dist.is_available() and dist.is_initialized():
+            return dist.get_rank(), dist.get_world_size()
+    except Exception:
+        pass
+
+    def _int_env(keys: List[str], default: int) -> int:
+        for k in keys:
+            v = os.environ.get(k)
+            if v is not None:
+                try:
+                    return int(v)
+                except ValueError:
+                    continue
+        return default
+
+    rank = _int_env(["RANK", "LOCAL_RANK"], 0)
+    world = _int_env(["WORLD_SIZE", "LOCAL_WORLD_SIZE"], 1)
+    return rank, world
+
+
 def _resolve_arrow_files(data_path: str | Path, split: str) -> List[Tuple[Path, str]]:
+    """列出所有属于 split 的 Arrow/Parquet 分片文件。"""
     data_path = Path(data_path)
     if data_path.is_file():
         suf = data_path.suffix.lower()
@@ -35,7 +65,7 @@ def _resolve_arrow_files(data_path: str | Path, split: str) -> List[Tuple[Path, 
         stem = p.stem.lower()
         if suf not in (".ipc", ".parquet"):
             continue
-        # 兼容三类命名：
+        # 支持以下命名：
         # 1) {split}_shard*.{ipc|parquet}
         # 2) dataset-*-{split}-*.{ipc|parquet}  ← SpectrumDataFrame.save 的格式
         # 3) {split}.{ipc|parquet}
@@ -50,20 +80,24 @@ def _resolve_arrow_files(data_path: str | Path, split: str) -> List[Tuple[Path, 
         elif fb_parq.exists():
             files = [(fb_parq, "parquet")]
         else:
-            raise ValueError(f"在 {data_path} 未找到分片或回退文件（{split}.ipc / {split}.parquet / dataset-*-{split}-*.parquet）。")
+            raise ValueError(
+                f"在 {data_path} 未找到分片或回退文件（{split}.ipc / {split}.parquet / dataset-*-{split}-*.parquet）。"
+            )
 
     return files
 
 
+# --------------------------- 清洗 / 标准化 ---------------------------
+
 def _clean_and_remap_batch(tbl: pa.Table) -> pl.DataFrame:
     df = pl.from_arrow(tbl)
 
-    # 先把 ANNOTATED_COLUMN 映射回 modified_sequence（若必要）
-    rename_map = {}
+    # 把 ANNOTATED_COLUMN 标准化到 modified_sequence
+    rename_map: dict[str, str] = {}
     if ANNOTATED_COLUMN in df.columns and "modified_sequence" not in df.columns:
         rename_map[ANNOTATED_COLUMN] = "modified_sequence"
 
-    # 兼容各种导出列名
+    # 常见列名映射
     col_map: dict[str, str] = {
         "Modified sequence": "modified_sequence",
         "MS/MS m/z": "precursor_mz",
@@ -80,11 +114,14 @@ def _clean_and_remap_batch(tbl: pa.Table) -> pl.DataFrame:
     if rename_map:
         df = df.rename(rename_map)
 
-    # 只保留训练需要列
+    # 只保留必要列（若需要 group/source_file 也保留）
     keep_cols = ["modified_sequence", "precursor_mz", "precursor_charge", "mz_array", "intensity_array"]
+    for extra in ("source_file", "group"):
+        if extra in df.columns and extra not in keep_cols:
+            keep_cols.append(extra)
     df = df.drop([c for c in df.columns if c not in keep_cols and c not in ("theoretical_mz", "precursor_mass")])
 
-    # 规范 dtype
+    # 统一 dtype
     wanted: dict[str, pl.DataType] = {
         "modified_sequence": pl.Utf8,
         "precursor_mz": pl.Float64,
@@ -96,12 +133,12 @@ def _clean_and_remap_batch(tbl: pa.Table) -> pl.DataFrame:
         if k in df.columns:
             df = df.with_columns(pl.col(k).cast(t))
 
-    # 必要列检查
+    # 必要列校验
     for k in ["modified_sequence", "precursor_mz", "precursor_charge", "mz_array", "intensity_array"]:
         if k not in df.columns:
             raise KeyError(f"缺失必要列: {k}")
 
-    # 去掉某些数据集里序列两端的占位符（看首字符）
+    # 有些数据集序列两端可能有占位符（如 '.' 或 '_'）
     if df.height > 0:
         first_val = df.select(pl.first("modified_sequence")).item()
         if isinstance(first_val, str) and len(first_val) > 0 and first_val[0] in (".", "_"):
@@ -109,15 +146,24 @@ def _clean_and_remap_batch(tbl: pa.Table) -> pl.DataFrame:
                 pl.col("modified_sequence").map_elements(lambda x: x[1:-1], return_dtype=pl.Utf8)
             )
 
-    return df.select(["modified_sequence", "precursor_mz", "precursor_charge", "mz_array", "intensity_array"])
+    # 输出列顺序
+    out_cols = ["modified_sequence", "precursor_mz", "precursor_charge", "mz_array", "intensity_array"]
+    for extra in ("group", "source_file"):
+        if extra in df.columns:
+            out_cols.append(extra)
+    return df.select(out_cols)
 
+
+# --------------------------- Dataset ---------------------------
 
 class SpectrumIterableDataset(IterableDataset):
     """
-    直接替换版：支持基于 Arrow 的流式/分片读取与并行预处理。
-    - 每个 worker 处理不同的 shard 列表；
-    - 通过 batch_rows 控制 Arrow 扫描批大小；
-    - shuffle_buffer>0 时使用 reservoir/缓冲打乱。
+    Arrow/Parquet 流式分片读取的 IterableDataset：
+    - 正确的 rank/worker 切分顺序（先 rank 后 worker），保证 DDP 下各 rank 均有数据；
+    - 当分片数量 < (world_size * num_workers) 时，采用“复制分配”以避免某些 rank/worker 空迭代；
+    - 可选大窗口缓冲打乱（shuffle_buffer）；
+    - 支持 spectrum_utils 预处理路径或快速张量路径；
+    - 可在需要时把谱图 pad/截断为固定长度（配合 torch.compile）。
     """
 
     def __init__(
@@ -143,117 +189,155 @@ class SpectrumIterableDataset(IterableDataset):
         batch_rows: int = 65536,
         shuffle_buffer: int = 0,
         use_sus_preprocess: bool = True,
-        # 读 Arrow scanner 时是否并行
+        # 读 Arrow scanner 是否多线程
         use_threads: bool = True,
+        # 是否跨 rank 分片（验证可关闭）
+        shard_across_ranks: bool = True,
+        # ---- 新增：用于验证分组 ----
+        return_group: bool = False,
+        group_col: str = "source_file",
+        group_mapping: Optional[Dict[str, str]] = None,
+        shuffle_files: bool = True,
     ) -> None:
         super().__init__()
         self.data_path = str(data_path)
         self.residue_set = residue_set
         self.split = split
 
-        self.n_peaks = n_peaks
-        self.min_mz = min_mz
-        self.max_mz = max_mz
-        self.remove_precursor_tol = remove_precursor_tol
-        self.min_intensity = min_intensity
-        self.pad_spectrum_max_length = pad_spectrum_max_length
-        self.peptide_pad_length = peptide_pad_length
-        self.reverse_peptide = reverse_peptide
-        self.annotated = annotated
-        self.return_str = return_str
-        self.bin_spectra = bin_spectra
-        self.bin_size = bin_size
-        self.add_eos = add_eos
-        self.tokenize_peptide = tokenize_peptide
+        self.n_peaks = int(n_peaks)
+        self.min_mz = float(min_mz)
+        self.max_mz = float(max_mz)
+        self.remove_precursor_tol = float(remove_precursor_tol)
+        self.min_intensity = float(min_intensity)
+        self.pad_spectrum_max_length = bool(pad_spectrum_max_length)
+        self.peptide_pad_length = int(peptide_pad_length)
+        self.reverse_peptide = bool(reverse_peptide)
+        self.annotated = bool(annotated)
+        self.return_str = bool(return_str)
+        self.bin_spectra = bool(bin_spectra)
+        self.bin_size = float(bin_size)
+        self.add_eos = bool(add_eos)
+        self.tokenize_peptide = bool(tokenize_peptide)
 
         self.batch_rows = int(batch_rows)
         self.shuffle_buffer = int(shuffle_buffer)
-        self.use_sus_preprocess = use_sus_preprocess
-        self.use_threads = use_threads
+        self.use_sus_preprocess = bool(use_sus_preprocess)
+        self.use_threads = bool(use_threads)
+        self.shard_across_ranks = bool(shard_across_ranks)
+
+        # 新增
+        self.return_group = bool(return_group)
+        self.group_col = str(group_col)
+        self.group_mapping = group_mapping
+        self.shuffle_files = bool(shuffle_files)
 
         self._files_with_fmt = _resolve_arrow_files(self.data_path, self.split)  # List[(Path, str)]
 
         if self.bin_spectra:
             # 预生成直方图 bin 边界（float32）
             nbins = int(np.floor(self.max_mz / self.bin_size)) + 1
-            self.bins = torch.linspace(0, self.bin_size * nbins, steps=nbins + 1, dtype=torch.float32)
+            self.bins = torch.linspace(
+                0, self.bin_size * nbins, steps=nbins + 1, dtype=torch.float32
+            )
         else:
             self.bins = None
 
-    # --------------------------- 核心迭代 ---------------------------
+    # --------------------------- 迭代主逻辑 ---------------------------
 
-    def __iter__(self) -> Iterator[Tuple[Spectrum, float, int, Peptide | str]]:
+    def __iter__(self) -> Iterator[Tuple[Spectrum, float, int, Peptide | str] | Tuple[Spectrum, float, int, Peptide | str, str]]:
+        # 并发单位：rank * num_workers（若不跨 rank，则 world_size=1）
+        wi = get_worker_info()
+        rank, world_size = _get_rank_world_size()
+        if not self.shard_across_ranks:
+            rank, world_size = 0, 1
 
-        """
-        基于 Arrow 扫描的流式读取：
-        - 按 worker 拆分文件子集（避免文件争用）
-        - 每个文件用正确的 format ('ipc' 或 'parquet') 构建 scanner
-        - 批量(record batch)读取 -> 逐行构样本
-        - 可选：shuffle_buffer 做大窗口随机打乱
-        """
-        worker_info = torch.utils.data.get_worker_info()
-        if worker_info is None:
-            pairs = self._files_with_fmt  # List[Tuple[Path, str]]
+        num_workers = wi.num_workers if wi is not None else 0
+        worker_id = wi.id if wi is not None else 0
+
+        n_units = world_size * (num_workers if num_workers > 0 else 1)
+        unit_id = rank * (num_workers if num_workers > 0 else 1) + worker_id
+
+        # 局部 RNG：保证并发环境下可复现的 shuffle / 采样
+        if wi is not None and hasattr(wi, "seed"):
+            seed = int(wi.seed)
         else:
-            wid, nw = worker_info.id, worker_info.num_workers
-            pairs = self._files_with_fmt[wid::nw]
+            seed = int(torch.initial_seed()) ^ (rank << 16) ^ (worker_id + 0x9E3779B1)
+        rng = random.Random(seed)
 
-        if not pairs:
-            # 该 worker 没分到文件，必须返回“可迭代”的空对象
+        files = list(self._files_with_fmt)
+        n_files = len(files)
+
+        # 分配策略
+        if n_files >= n_units:
+            assigned = files[unit_id::n_units]
+        else:
+            reps = math.ceil(n_units / max(n_files, 1))
+            repeated = (files * reps)[:n_units]
+            assigned = [repeated[unit_id]]
+
+        # 验证集通常不希望打乱分片顺序；训练集可保持随机
+        if self.shuffle_files:
+            rng.shuffle(assigned)
+
+        if not assigned:
             return iter(())
 
-        pairs = list(pairs)
-        random.shuffle(pairs)
+        # 大窗口打乱缓冲
+        buffer: List[Tuple[Spectrum, float, int, Peptide | str] | Tuple[Spectrum, float, int, Peptide | str, str]] = []
 
-        buffer: List[Tuple[Spectrum, float, int, Peptide | List[str]]] = []
-
-        for fpath, fmt in pairs:
+        for fpath, fmt in assigned:
             dataset = ds.dataset(str(fpath), format=fmt)
-            scanner = dataset.scanner(
-                filter=None, use_threads=self.use_threads, batch_size=self.batch_rows
-            )
+            scanner = dataset.scanner(filter=None, use_threads=self.use_threads, batch_size=self.batch_rows)
 
             for rb in scanner.to_batches():
                 tbl = pa.Table.from_batches([rb])
-                df_batch = _clean_and_remap_batch(tbl)
+                try:
+                    df_batch = _clean_and_remap_batch(tbl)
+                except Exception as e:
+                    logger.warning(f"批次清洗失败（{fpath.name}）：{e}; 跳过该批。")
+                    continue
                 if df_batch.height == 0:
                     continue
 
+                # 遍历行构建样本
                 for row in df_batch.iter_rows(named=True):
                     try:
                         item = self._build_item_from_row(row)
                     except Exception as e:
-                        logger.debug(f"Row failed with {e}; using dummy spectrum.")
+                        logger.debug(f"行处理失败：{e}; 使用占位样本。")
                         item = self._dummy_item()
 
                     if self.shuffle_buffer > 0:
                         buffer.append(item)
                         if len(buffer) >= self.shuffle_buffer:
-                            j = random.randrange(len(buffer))
+                            j = rng.randrange(len(buffer))
                             yield buffer.pop(j)
                     else:
                         yield item
 
+        # 清空缓冲区（保持打乱）
         while buffer:
-            j = random.randrange(len(buffer))
+            j = rng.randrange(len(buffer))
             yield buffer.pop(j)
 
-    # ------------------------ 样本构造与预处理 ------------------------
+    # --------------------------- 样本构造 / 预处理 ---------------------------
 
-    def _dummy_item(self) -> Tuple[Spectrum, float, int, Peptide | str]:
+    def _dummy_item(self):
         spectrum = torch.tensor([[0.0, 1.0]], dtype=torch.float32)
         precursor_mz = 1.0
         precursor_charge = 1
         if self.return_str:
-            pep_out: Peptide | List[str] = ""
+            pep_out: Peptide | str = ""
         else:
             pep_out = torch.zeros(
                 (self.peptide_pad_length + (1 if self.add_eos else 0),), dtype=torch.long
             )
-        return spectrum, precursor_mz, precursor_charge, pep_out
+        if not self.return_group:
+            return spectrum, precursor_mz, precursor_charge, pep_out
+        return spectrum, precursor_mz, precursor_charge, pep_out, "no_group"
 
-    def _build_item_from_row(self, row: dict) -> Tuple[Spectrum, float, int, Peptide | str]:
-        # 读取/转 dtype（尽量零拷贝或一次拷贝）
+    def _build_item_from_row(self, row: dict):
+        # 转 dtype（尽量零拷贝）
         mz_np = np.asarray(row["mz_array"], dtype=np.float32)
         int_np = np.asarray(row["intensity_array"], dtype=np.float32)
         mz = torch.from_numpy(mz_np)
@@ -267,9 +351,11 @@ class SpectrumIterableDataset(IterableDataset):
         spectrum = self._process_peaks(mz, inten, precursor_mz, precursor_charge)
 
         if self.bin_spectra:
-            hist = torch.histogram(spectrum[:, 0], bins=self.bins, weight=spectrum[:, 1]).hist
-            spectrum = hist  # 1D: (nbins,)
+            # 1D 直方图
+            hist = torch.histogram(spectrum[:, 0], bins=self.bins, weight=spectrum[:, 1]).hist  # type: ignore
+            spectrum = hist  # shape: (nbins,)
         elif self.pad_spectrum_max_length:
+            # 固定长度 (n_peaks, 2)
             if spectrum.shape[0] > self.n_peaks:
                 spectrum = spectrum[: self.n_peaks]
             if spectrum.shape[0] < self.n_peaks:
@@ -278,7 +364,7 @@ class SpectrumIterableDataset(IterableDataset):
                 spectrum = out
 
         if self.return_str:
-            pep_out: Peptide | List[str] = peptide_str
+            pep_out: Peptide | str = peptide_str
         else:
             if self.tokenize_peptide:
                 pep_tokens = self.residue_set.tokenize(peptide_str)
@@ -294,18 +380,27 @@ class SpectrumIterableDataset(IterableDataset):
             pep_pad[:L] = pep_ids[:L]
             pep_out = pep_pad
 
-        return spectrum, precursor_mz, precursor_charge, pep_out
+        if not self.return_group:
+            return spectrum, precursor_mz, precursor_charge, pep_out
+
+        # ---- 附带 group 信息 ----
+        g = str(row.get("group", row.get(self.group_col, "")))
+        if self.group_mapping is not None and g:
+            g = self.group_mapping.get(g, "no_group")
+        if not g:
+            g = "no_group"
+        return spectrum, precursor_mz, precursor_charge, pep_out, g
 
     def _process_peaks(
         self,
-        mz_array: Tensor,            # shape: (P,)
-        int_array: Tensor,           # shape: (P,)
+        mz_array: Tensor,          # (P,)
+        int_array: Tensor,         # (P,)
         precursor_mz: float,
         precursor_charge: int,
     ) -> Spectrum:
-        """与原版等价的光谱预处理；默认使用 spectrum_utils，可切换快速路径。"""
+        """与原版等价的谱图预处理；默认使用 spectrum_utils，可切换纯张量快路径。"""
         if self.use_sus_preprocess:
-            mz_np  = mz_array.detach().cpu().numpy().astype(np.float32, copy=False)
+            mz_np = mz_array.detach().cpu().numpy().astype(np.float32, copy=False)
             int_np = int_array.detach().cpu().numpy().astype(np.float32, copy=False)
             spec = sus.MsmsSpectrum(
                 identifier="",
@@ -334,7 +429,7 @@ class SpectrumIterableDataset(IterableDataset):
             except ValueError:
                 return torch.tensor([[0.0, 1.0]], dtype=torch.float32)
 
-        # 快速路径：纯张量实现
+        # 纯张量快路径
         if int_array.numel() == 0:
             return torch.tensor([[0.0, 1.0]], dtype=torch.float32)
 
@@ -350,8 +445,7 @@ class SpectrumIterableDataset(IterableDataset):
         if mz_array.numel() == 0:
             return torch.tensor([[0.0, 1.0]], dtype=torch.float32)
 
-
-        if int(self.n_peaks) < int_array.numel():
+        if self.n_peaks < int_array.numel():
             topk = torch.topk(int_array, k=self.n_peaks, largest=True, sorted=False)
             idx = topk.indices
             mz_array = mz_array[idx]

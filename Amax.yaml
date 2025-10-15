@@ -1,15 +1,14 @@
 # ===================== ① 最常改（每次跑基本都会确认/调整） =====================
-run_name: Proteometools300w_HLAGroupedValid   # 本次实验名；同时影响日志与中间分片目录（见下）
+run_name: NewTrainCode_Proteometools300w   # 本次实验名；同时影响日志与中间分片目录（见下）
+#train_path: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class2_val_Spect.parquet
+#valid_path: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class1_val_Spect.parquet # 不再支持分组验证
 train_path: /data/48/wuqian/Proteometools/allPart/spectrum/part123_clear.parquet
-valid_path:                                         # 分组验证：key 作为分组名
-  HLAI:  /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class1_val_Spect.parquet
-  HLAII: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_class2_val_Spect.parquet
+valid_path: /data/48/wuqian/Proteometools/SystemMHC/dataSet/SysteMHC_PTM_filtered_classI_II_val_Spect.parquet
 
 train_subset: 1                                   # 训练采样比例；正式训练设为 1.0
 valid_subset: 1                                     # 验证采样比例；调参可小一点加快
 
 
-overwrite_iter_shards: false                      # 新数据务必开；否则会复用旧分片（容易串数据）
 epochs: 30
 learning_rate: 1e-4
 train_batch_size: 196                               # 训练 batch；显存不够可配合 grad_accumulation
@@ -17,21 +16,16 @@ grad_accumulation: 1                                # 有效 batch = train_batch
 predict_batch_size: 128                             # 验证/推理 batch；受显存影响较大
 n_peaks: 200                                        # 选取前 k 个峰；与显存/速度和精度权衡
 max_length: 40                                      # 最大肽段长度；compile_model=True 时也用于固定 padding
-n_beams: 5                                          # 解码 beam size；大一些更准但更慢
-shard_valid: true                                   # 多卡下把验证集分到各 GPU 并行，之后汇总
-val_check_interval: 1.0                             # 1.0=每个 epoch 末验证；(0,1)=按比例换算为步数
+n_beams: 1                                          # 解码 beam size；大一些更准但更慢
 
 # ===================== ② 训练过程与资源（较常改） =====================
 device: auto
 fp16: true                                          # GPU 上建议开；CPU 会被自动关掉
 use_flash_attention: true                           # 需兼容的 PyTorch/CUDA，显著省显存提速
 compile_model: true                                 # 需固定长度输入（已在数据集侧自动 pad/截断）
-num_workers: 4                                      # 训练 DataLoader worker 数
-eval_num_workers: 4                                 # 验证 DataLoader worker 数
-prefetch_factor: 1                                  # 每个 worker 预取批数
+num_workers: 2                                      # 训练 DataLoader worker 数
+prefetch_factor: 2                                  # 每个 worker 预取批数
 eval_prefetch_factor: 1
-arrow_batch_rows: 65536                             # Arrow 扫描 batch 大小（I/O 粒度）
-shuffle_buffer: 0                                   # >0 时启用大窗口缓冲打乱（可提升随机性，增内存）
 
 # ===================== ③ 日志/监控（偶尔改） =====================
 console_logging_steps: 50
